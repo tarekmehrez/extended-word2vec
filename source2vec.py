@@ -1,5 +1,6 @@
 import os
-import pickle
+import json
+
 
 import numpy as np
 from collections import defaultdict
@@ -9,13 +10,15 @@ from collections import defaultdict
 
 
 def write_obj(obj, file_name):
-	f = open(file_name, 'wb')
-	pickle.dump(obj, f)
-	f.close()
+
+	with open(file_name, 'w') as outfile:
+		json.dump(obj, outfile)
+
 
 def read_obj(file_name):
-	f = open(file_name, 'rb')
-	return pickle.load(f)
+	with open(file_name, 'r') as f:
+		data = json.load(f)
+	return data
 
 def construct_contexts():
 
@@ -68,14 +71,14 @@ def construct_contexts():
 
 			context[word] +=curr.tolist()
 
-	write_obj((vocab_idx, context),'contexts.pickle')
+	write_obj((vocab_idx, context),'contexts.json')
 	return (vocab_idx, context)
 
-if not os.path.exists('contexts.pickle'):
+if not os.path.exists('contexts.json'):
 	vocab_idx, context = construct_contexts()
 else:
 	print "already exits, loading context"
-	vocab_idx, context = read_obj('contexts.pickle')
+	vocab_idx, context = read_obj('contexts.json')
 
 
 
