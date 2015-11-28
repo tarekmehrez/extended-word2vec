@@ -1,0 +1,5 @@
+other-files/*
+crawl.py
+*.json
+.DS_Store
+*.pyc
