@@ -5,7 +5,6 @@ import logging
 import numpy as np
 from collections import defaultdict
 
-
 class Corpus:
 
 	def __init__(self):
@@ -34,45 +33,51 @@ class Corpus:
  			vocab.update(curr)
 			self.content.append(curr)
 
+
 		self.vocab = dict(zip(dict.fromkeys(vocab),range(len(vocab))))
 
 
 
-	def make_contexts(self, cw):
+	def make_contexts(self, cw=3):
 		self.logger.info("Constructing context windows...")
+
 		contexts = defaultdict(list)
+		occ = np.zeros(len(self.vocab))
 
 		for i, source in enumerate(self.content):
 
 			# replace words by indices
-			for word in self.vocab:
-				indices = np.where(source == word)[0]
-				self.content[i][indices] = self.vocab[word]
+			self.content[i] = map(lambda word: self.vocab[word], self.content[i])
 
 			# change idx from strings to ints
-			self.content[i] = self.content[i].astype(np.int)
+			self.content[i] = np.array(self.content[i]).astype(np.int)
+
+			indices = list(set(self.content[i]))
+			occ[indices] += 1
 
 			# build context windows
-
-			# to handle edges
 			upper = lambda x: 0 if x < 0 else x
 			for j,word in enumerate (self.content[i]):
 
+				word = int(word)
 				curr = self.content[i][upper(j-cw):j+cw+1]
 				contexts[word] += curr.tolist()
+
 				# delete current word from context list
 				# mask = np.ones(len(curr), np.bool)
 				# indices = np.where(curr==word)[0]
 				# mask[indices]=False
 				# curr = curr[mask]
 
-
+		occ = np.array(occ).astype(np.float)
+		self.occ = occ
 		self.contexts = contexts
+
 	def write(self):
 		self.logger.info("Writing data to json files...")
 
 		with open('data.json', 'w') as f:
-			json.dump((self.vocab,self.contexts), f)
+			json.dump((self.vocab,self.contexts, self.occ), f)
 
 		self.logger.info("done writing!")
 
@@ -84,6 +89,5 @@ class Corpus:
 			return json.load(f)
 
 	def idx2word(self, list):
-		for word in self.vocab:
-			indices = np.where(list == self.vocab[word])[0]
-			list[indices] = word
+		new_vocab = dict (zip(self.vocab.values(),self.vocab.keys()))
+		return map(lambda idx: new_vocab[idx], list)
