@@ -1,6 +1,8 @@
-import theano
 import random
 import numpy as np
+import theano
+import logging
+import sys
 
 from theano import tensor as T
 from collections import defaultdict
@@ -13,25 +15,75 @@ from collections import defaultdict
 
 class VectorSpace:
 
-	def __init__(self, vocab, contexts, occ ,dim=100):
-		self.vocab = vocab
-		self.contexts = contexts
+	def __init__(self, data ,dim=100):
+
+		logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
+		self.logger = logging.getLogger(__name__)
+
+		self.logger.info('initializing vector space...')
+		# main vars
+		self.vocab, self.contexts, occ = data
 		self.neg_contexts = defaultdict(list)
-		self.dim  = dim
-		self.word2vec()
+		self.dim = dim
 		self.probs = np.array(map(lambda x: x / len(occ), occ)).astype(np.float)
 
-	def word2vec(self, training_steps=100):
+		self.word2vec()
 
-		self.in_vec = 0.2 * numpy.random.uniform(-1.0, 1.0,(len(self.vocab), self.dim))
-		self.out_vect = 0.2 * numpy.random.uniform(-1.0, 1.0,(len(self.vocab), self.dim))
+
+
+	def word2vec(self, training_steps=1000, alpha=0.01):
+
+		in_vec  = theano.shared(0.2 * np.random.uniform(-1.0, 1.0,(len(self.vocab), self.dim)) \
+				.astype(theano.config.floatX))
+		out_vec  = theano.shared(0.2 * np.random.uniform(-1.0, 1.0,(len(self.vocab), self.dim)) \
+				.astype(theano.config.floatX))
+
+		self.logger.info('constructing cost function...')
+		u, v, n = T.vectors('u', 'v', 'n')
+		t,j  = T.iscalars('t','j')
+		ctx_term = T.log(1 / (1 + T.exp(-T.dot(u,v))))
+		neg_term = T.log(1 / (1 + T.exp(-T.dot(n,u)))).sum()
+		cost = - (ctx_term + neg_term.sum())
+		gu, gv = T.grad(cost, [u, v])
+
+
+		self.logger.info('compiling cost function...')
+
+
+
+
+		cost_function = theano.function(inputs=[t,j,u,v,n], \
+										outputs=cost, \
+										updates=(	(out_vec, T.set_subtensor(out_vec[j], u - alpha * gu)), \
+													(in_vec, T.set_subtensor(in_vec[t], v - alpha * gv))))
+
+
+
+
+
+		self.logger.info('cost function compiled successfully...')
+		sys.exit(0)
+		self.logger.info('started training...')
+
+		for i in range(training_steps):
+
+			self.logger.info('training iteration: ' + str(i))
+
+			easy_neg_samples()
+			for word in self.contexts:
+
+				cx_words = self.contexts[word]
+				neg_words = self.neg_samples(word)
+
+				for cw in cx_words:
+					curr = cost_function(cw, word,in_vec[self.sum_neg_samples[cw]])
 
 
 	# easier version of choosing k, just by randomly
 	# choosing words not in the context windows
-	def easy_neg_samples(self, k=5):
+	def easy_neg_samples(k=5):
 
-		self.sum_neg_samples = np.zeros((len(self.vocab),self.dim))
+		self.sum_neg_samples = []
 		for word in self.contexts:
 
 			if not len(self.neg_contexts):
@@ -47,11 +99,11 @@ class VectorSpace:
 				self.neg_contexts[word] = neg_words
 
 			random.shuffle(self.neg_contexts[word])
-			self.sum_neg_samples[word] = self.in_vec(self.neg_contexts[word][:k]).sum()
+
 
 
 	# following the definition in the word2vec paper
-	def neg_samples(self, k=5):
+	def neg_samples(k=5):
 		self.sum_neg_samples = np.zeros((len(self.vocab),self.dim))
 
 		z = 0.1 # normalizing factor
@@ -61,9 +113,9 @@ class VectorSpace:
 			# to avoid computing U(k)^3/4 every iteration, a bigger sample is saved
 			if not len(self.neg_contexts):
 
-				neg_samples = self.probs
-				neg_samples **= 3/4
-				neg_samples *= self.probs(word) / z
+				samples = self.probs
+				samples **= 3/4
+				samples *= self.probs(word) / z
 
 				samples_dict = dict(zip(range(len(neg_samples),neg_samples.tolist())))
 				sorted_samples = sorted(samples_dict.items(), key=operator.itemgetter(1))
@@ -71,7 +123,7 @@ class VectorSpace:
 
 			# then k is selected randomly each iteration
 			random.shuffle(self.neg_contexts[word])
-			self.sum_neg_samples[word] = self.in_vec(self.neg_contexts[word][:k]).sum()
+
 
 
 

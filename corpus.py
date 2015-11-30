@@ -52,13 +52,12 @@ class Corpus:
 			# change idx from strings to ints
 			self.content[i] = np.array(self.content[i]).astype(np.int)
 
-			indices = list(set(self.content[i]))
-			occ[indices] += 1
 
 			# build context windows
 			upper = lambda x: 0 if x < 0 else x
 			for j,word in enumerate (self.content[i]):
 
+				occ[word] += 1
 				word = int(word)
 				curr = self.content[i][upper(j-cw):j+cw+1]
 				contexts[word] += curr.tolist()
@@ -74,10 +73,11 @@ class Corpus:
 		self.contexts = contexts
 
 	def write(self):
+
 		self.logger.info("Writing data to json files...")
 
 		with open('data.json', 'w') as f:
-			json.dump((self.vocab,self.contexts, self.occ), f)
+			json.dump([self.vocab,self.contexts, self.occ.tolist()], f)
 
 		self.logger.info("done writing!")
 
