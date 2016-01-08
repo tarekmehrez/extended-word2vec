@@ -1,36 +1,14 @@
-import logging
-import os
+import sys
 
+from arg_parser import ArgParser
 from corpus import Corpus
-# from vector_space import VectorSpace
+# from vec_space import VectorSpace
 
+parser = ArgParser()
+results = parser.parse(sys.argv)
 
-logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
-logger = logging.getLogger(__name__)
+print results
+train = results[0] == 'train'
 
-'''
-TODO command line args for:
-
-entities file
-input_dir with articles
-pickle files to be loaded
-context window
-alpha - learning rate
-learning iterations
-regularization parameter
-
-'''
-
-# TODO read entities from file
-entities = ['FIFA','USA','Iran','UK','Switzerland','Syria']
-
-# files to be read
-# TODO clean this
-files = ['vocab.pkl','freq.pkl','ctx_words.pkl']
-
-# directory with all articles
-input_dir = 'art-data'
-
-corpus = Corpus(input_dir, entities)
-
-# vec_space = VectorSpace(corpus)
+if not train:
+	Corpus(results[1:])
