@@ -3,9 +3,11 @@ import logging
 
 import csv
 
-import cPickle as pickle
+import pickle
+
 
 from collections import defaultdict
+from collections import OrderedDict
 
 from nltk import FreqDist
 
@@ -51,8 +53,11 @@ class Corpus:
 				self._freq[i] += 1
 
 
-		self._logger.info('vocab size = ' + str(len(self._freq)))
+		self._freq = OrderedDict(sorted(self._freq.items()))
 
+		self._logger.info('vocab size = ' + str(len(self._freq)))
+		self.words_to_idx(self._source_files[0])
+		self._save()
 
 	def _read_file(self, csv_row):
 
@@ -69,4 +74,18 @@ class Corpus:
 
 		return curr.split(' ')
 
+	def words_to_idx(self,csv_row):
+
+		curr = self._read_file(csv_row)
+		vocab = self._freq.keys()
+		idx = map(lambda word: vocab.index(word), curr)
+
+		return idx
+
+	def _save(self):
+		self._logger.info("writing corpus")
+		self._logger = None
+
+		with open('corpus.pkl', 'wb') as f:
+			pickle.dump(self, f)
 
