@@ -1,8 +1,8 @@
 import logging
 
-
+import os
 import csv
-
+import sys
 import pickle
 
 
@@ -19,8 +19,12 @@ class Corpus:
 
 		logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
 		self._logger = logging.getLogger(__name__)
-		self._dir = args[0]
 
+		if os.path.exists('corpus.pkl'):
+			self._logger.info('corpus.pkl already exists')
+			sys.exit(1)
+
+		self._dir = args[0]
 		self._read_dir()
 		self._create_vocab()
 
@@ -55,7 +59,7 @@ class Corpus:
 
 		self._freq = OrderedDict(sorted(self._freq.items()))
 
-		self._logger.info('vocab size = ' + str(len(self._freq)))
+		self._logger.info('vocab size: ' + str(len(self._freq)))
 		self.words_to_idx(self._source_files[0])
 		self._save()
 
@@ -83,7 +87,7 @@ class Corpus:
 		return idx
 
 	def _save(self):
-		self._logger.info("writing corpus")
+		self._logger.info("saving corpus object to corpus.pkl")
 		self._logger = None
 
 		with open('corpus.pkl', 'wb') as f:

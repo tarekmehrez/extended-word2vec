@@ -30,8 +30,14 @@ class ArgParser:
 		self._parser.add_argument(	'--dir', action='store', dest='dir',
 									help='input directory containing text files, entities file & sources.csv')
 
+		self._parser.add_argument(	'--dim', action='store', dest='dim',
+									help='vector dimensions, DEFUALT: 100',type=int,default=100)
+
 		self._parser.add_argument(	'--cw', action='store', dest='cw',
 									help='context window size, DEFUALT: 3',type=int,default=3)
+
+		self._parser.add_argument(	'--iter', action='store', dest='iter',
+									help='learning iterations, DEFUALT: 100',type=int,default=100)
 
 		self._parser.add_argument(	'--alpha', action='store', dest='alpha',
 									help='learning rate, DEFUALT: 0.1',type=float,default=0.1)
@@ -39,12 +45,11 @@ class ArgParser:
 		self._parser.add_argument(	'--reg', action='store', dest='reg',
 									help='regularization term, DEFUALT: 0.1',type=float,default=0.1)
 
-		self._parser.add_argument(	'--iter', action='store', dest='iter',
-									help='learning iterations, DEFUALT: 100',type=int,default=100)
+
 
 
 	def parse(self, args):
-		self._logger.info("parsing arguments...")
+		self._logger.info("parsing arguments")
 		results = self._parser.parse_args()
 
 		if not (results.corpus or results.train):
@@ -71,4 +76,10 @@ class ArgParser:
 				self._logger.info("you have to read in the corpus first")
 				self._help_exit()
 
-			return ('train', results.cw, results.alpha, results.reg, results.iter)
+			return ('train', results.dim, results.cw, results.iter, results.alpha, results.reg)
+
+
+
+
+
+
