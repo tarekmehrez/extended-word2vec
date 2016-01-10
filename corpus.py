@@ -1,24 +1,17 @@
-import logging
-
-import os
-import csv
-import sys
-import pickle
+import os, csv, sys, pickle
 
 
 from collections import defaultdict
 from collections import OrderedDict
 
-from nltk import FreqDist
 
 # reads in corpus, must have files, sources.csv and entities.txt
 
 class Corpus:
 
-	def __init__(self,args):
+	def __init__(self,logger, args):
 
-		logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
-		self._logger = logging.getLogger(__name__)
+		self._logger = logger
 
 		if os.path.exists('corpus.pkl'):
 			self._logger.info('corpus.pkl already exists')
@@ -59,6 +52,7 @@ class Corpus:
 
 		self._freq = OrderedDict(sorted(self._freq.items()))
 
+		self._logger.info('corpus size: ' + str(self.get_corpus_size()))
 		self._logger.info('vocab size: ' + str(len(self._freq)))
 		self.words_to_idx(self._source_files[0])
 		self._save()
@@ -78,13 +72,6 @@ class Corpus:
 
 		return curr.split(' ')
 
-	def words_to_idx(self,csv_row):
-
-		curr = self._read_file(csv_row)
-		vocab = self._freq.keys()
-		idx = map(lambda word: vocab.index(word), curr)
-
-		return idx
 
 	def _save(self):
 		self._logger.info("saving corpus object to corpus.pkl")
@@ -93,3 +80,22 @@ class Corpus:
 		with open('corpus.pkl', 'wb') as f:
 			pickle.dump(self, f)
 
+	def words_to_idx(self,csv_row):
+
+		curr = self._read_file(csv_row)
+		vocab = self._freq.keys()
+		idx = map(lambda word: vocab.index(word), curr)
+
+		return idx
+
+	def get_corpus_size(self):
+		return sum(self._freq.values())
+
+	def get_vocab(self):
+		return self._freq.keys()
+
+	def get_freq(self):
+		return self._freq
+
+	def get_source_files(self):
+		return self._source_files

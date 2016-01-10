@@ -1,14 +1,10 @@
-import argparse
-import logging
-import sys
-import os
+import argparse, sys, os
 
 class ArgParser:
 
-	def __init__(self):
+	def __init__(self, logger):
 
-		logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
-		self._logger = logging.getLogger(__name__)
+		self._logger = logger
 
 
 		self._parser = argparse.ArgumentParser()
@@ -38,6 +34,9 @@ class ArgParser:
 
 		self._parser.add_argument(	'--iter', action='store', dest='iter',
 									help='learning iterations, DEFUALT: 100',type=int,default=100)
+
+		self._parser.add_argument(	'--batch', action='store', dest='batch',
+									help='batch size, DEFUALT: 100',type=float,default=100)
 
 		self._parser.add_argument(	'--alpha', action='store', dest='alpha',
 									help='learning rate, DEFUALT: 0.1',type=float,default=0.1)
@@ -76,7 +75,7 @@ class ArgParser:
 				self._logger.info("you have to read in the corpus first")
 				self._help_exit()
 
-			return ('train', results.dim, results.cw, results.iter, results.alpha, results.reg)
+			return ('train', results.dim, results.cw, results.iter, results.batch, results.alpha, results.reg)
 
 
 

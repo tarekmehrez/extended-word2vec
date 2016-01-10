@@ -1,15 +1,19 @@
-import sys
+import sys, logging
 
 from arg_parser import ArgParser
 from corpus import Corpus
 from vector_space import VectorSpace
 
-parser = ArgParser()
-results = parser.parse(sys.argv)
+logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
+logger = logging.getLogger(__name__)
 
-train = results[0] == 'train'
+
+parser = ArgParser(logger)
+args = parser.parse(sys.argv)
+
+train = args[0] == 'train'
 
 if train:
-	VectorSpace(results[1:])
+	VectorSpace(logger,args[1:])
 else:
-	Corpus(results[1:])
+	Corpus(logger,args[1:])
