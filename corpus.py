@@ -140,3 +140,6 @@ class Corpus:
 
 	def get_freq(self):
 		return self._freq
+
+	def get_source_files(self):
+		return self._source_files

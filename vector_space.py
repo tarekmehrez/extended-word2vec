@@ -5,7 +5,8 @@ import theano
 import numpy as np
 
 from theano import tensor as T
-from scipy import stats
+from sklearn.decomposition import PCA
+
 
 class VectorSpace:
 
@@ -24,20 +25,35 @@ class VectorSpace:
 
 		self._in_vecs = np.random.rand(len(self._vocab),self._dim)
 		self._out_vecs =  np.random.rand(len(self._vocab),self._dim)
-		print self._vocab
-		# self._init_neg_samples()
 		self._train_gensim()
 
 	def _train_gensim(self):
 		self._logger.info('starting training vectors with gensim')
 
-		sentences = []
+		tokens = []
 		for csv_row in self._corpus.get_source_files():
-			sentences += self._corpus._read_file(csv_row)
+			tokens += self._corpus._read_file(csv_row)
 
-		print sentences
-		sys.exit(1)
-		model = gensim.models.Word2Vec(sentences, size=100, window=5)
+		sentences = []
+		offset = 10
+		curr = []
+
+		for i, t in enumerate(tokens):
+
+			curr.append(t)
+			offset -= 1
+
+			if offset == 0:
+				sentences.append(curr)
+				offset = 10
+				curr = []
+
+		model = gensim.models.Word2Vec()
+		model.build_vocab(sentences)
+
+		print model.vocab
+		model.train(sentences)
+
 		model.save('gensim.model')
 		self._logger.info('done training vectors with gensim')
 
@@ -127,15 +143,6 @@ class VectorSpace:
 	def _sigmoid(self,x):
 		return  1 / (1 + np.exp(-x))
 
-	def _neg_samples(self, samples=5):
-		return self._neg_dist.rvs(size=samples)
-
-
-	def _init_neg_samples(self):
-		freq = np.array(self._freq.values(), dtype=float)
-		idx = range(len(self._vocab))
-		freq = np.power(freq / np.sum(freq), 3/4)
-		self._neg_dist = stats.rv_discrete(name='_neg_dist', values=(idx, freq))
 
 
 	def _load_corpus(self):
