@@ -3,6 +3,9 @@ import sys, logging
 from arg_parser import ArgParser
 from corpus import Corpus
 from vector_space import VectorSpace
+from visualizer import Visualizer
+
+
 
 logging.basicConfig(level=logging.DEBUG,format='%(asctime)s : %(levelname)s : %(message)s')
 logger = logging.getLogger(__name__)
@@ -11,9 +14,10 @@ logger = logging.getLogger(__name__)
 parser = ArgParser(logger)
 args = parser.parse(sys.argv)
 
-train = args[0] == 'train'
 
-if train:
+if args[0] == 'train':
 	VectorSpace(logger,args[1:])
-else:
+elif args[0] == 'corpus':
 	Corpus(logger,args[1:])
+else:
+	Visualizer(logger, args[1:])

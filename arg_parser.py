@@ -23,6 +23,10 @@ class ArgParser:
 		self._parser.add_argument(	'--train', action='store', dest='train',
 									help='MODE: train vector space (after reading in corpus)')
 
+		self._parser.add_argument(	'--plot', action='store', dest='plot',
+									help='MODE: visualize vector space')
+
+
 		self._parser.add_argument(	'--dir', action='store', dest='dir',
 									help='input directory containing text files, entities file & sources.csv')
 
@@ -44,6 +48,9 @@ class ArgParser:
 		self._parser.add_argument(	'--reg', action='store', dest='reg',
 									help='regularization term, DEFUALT: 0.1',type=float,default=0.1)
 
+		self._parser.add_argument(	'--model', action='store', dest='model',
+									help='vector space to be visualized')
+
 
 
 
@@ -51,12 +58,12 @@ class ArgParser:
 		self._logger.info("parsing arguments")
 		results = self._parser.parse_args()
 
-		if not (results.corpus or results.train):
+		if not (results.corpus or results.train or results.plot):
 			self._help_exit()
 
 		if results.corpus:
-			if results.train:
-				self._logger.info("you can either read in a corpus or train the model at a time")
+			if results.train or results.plot:
+				self._logger.info("you can either read in a corpus, train a model or visualize one at a time")
 				self._help_exit()
 
 
@@ -67,8 +74,8 @@ class ArgParser:
 			return ('corpus', results.dir, results.cw)
 
 		if results.train:
-			if results.corpus:
-				self._logger.info("you can either read in a corpus or train the model at a time")
+			if results.corpus or results.plot :
+				self._logger.info("you can either read in a corpus, train a model or visualize one at a time")
 				self._help_exit()
 
 			if not os.path.exists('corpus.pkl'):
@@ -77,7 +84,17 @@ class ArgParser:
 
 			return ('train', results.dim, results.iter, results.batch, results.alpha, results.reg)
 
+		if results.plot:
+			if results.corpus or results.train:
+				self._logger.info("you can either read in a corpus, train a model or visualize one at a time")
+				self._help_exit()
 
+			if not os.path.exists(results.model):
+
+				self._logger.info("the model you are trying to visualize does not exist")
+				self._help_exit()
+
+			return('plot', results.model)
 
 
 
