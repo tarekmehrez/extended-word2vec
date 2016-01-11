@@ -1,9 +1,10 @@
 import os, csv, sys, cPickle
 
+import numpy as np
 
 from collections import defaultdict
 from collections import OrderedDict
-
+from scipy import stats
 
 # reads in corpus, must have files, sources.csv and entities.txt
 
@@ -21,6 +22,7 @@ class Corpus:
 		self._read_dir()
 		self._create_vocab()
 		self._create_ctx_windows()
+		self._create_neg_samples()
 		self._save()
 
 	def _read_dir(self):
@@ -99,6 +101,22 @@ class Corpus:
 
 		return windows
 
+
+	def _create_neg_samples(self, samples=5):
+
+		self._logger.info('creating neg samples')
+
+
+		freq = np.array(self._freq.values(), dtype=float)
+		idx = range(len(self._freq.keys()))
+		freq = np.power(freq / np.sum(freq), 3/4)
+		neg_dist = stats.rv_discrete(name='_neg_dist', values=(idx, freq))
+
+		self._neg_samples = []
+		for i in self._windows:
+			self._neg_samples += neg_dist.rvs(size=samples).tolist()
+
+
 	def _save(self):
 		self._logger.info("saving corpus object to corpus.pkl")
 		self._logger = None
@@ -108,6 +126,8 @@ class Corpus:
 
 
 
+	def get_neg_samples(self):
+		return self._neg_samples
 
 	def get_windows(self):
 		return self._windows
