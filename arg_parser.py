@@ -64,7 +64,7 @@ class ArgParser:
 				self._logger.info("you have to specify the input dir to read the corpus")
 				self._help_exit()
 
-			return ('corpus', results.dir)
+			return ('corpus', results.dir, results.cw)
 
 		if results.train:
 			if results.corpus:
@@ -75,7 +75,7 @@ class ArgParser:
 				self._logger.info("you have to read in the corpus first")
 				self._help_exit()
 
-			return ('train', results.dim, results.cw, results.iter, results.batch, results.alpha, results.reg)
+			return ('train', results.dim, results.iter, results.batch, results.alpha, results.reg)
 
 
 

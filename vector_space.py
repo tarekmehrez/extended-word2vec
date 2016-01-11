@@ -1,8 +1,10 @@
-import pickle
+import cPickle, sys
 
+import gensim
+import theano
 import numpy as np
 
-import sys
+from theano import tensor as T
 from scipy import stats
 
 class VectorSpace:
@@ -15,17 +17,40 @@ class VectorSpace:
 		self._logger.info('initializing vector space')
 
 
-		self._dim, self._cw, self._epochs, self._batch_size, self._alpha, self._reg = args
+		self._dim, self._epochs, self._batch_size, self._alpha, self._reg = args
 
 		self._freq = self._corpus.get_freq()
 		self._vocab = self._corpus.get_vocab()
 
 		self._in_vecs = np.random.rand(len(self._vocab),self._dim)
 		self._out_vecs =  np.random.rand(len(self._vocab),self._dim)
+		print self._vocab
+		# self._init_neg_samples()
+		self._train_gensim()
 
-		self._init_neg_samples()
-		self._train()
+	def _train_gensim(self):
+		self._logger.info('starting training vectors with gensim')
 
+		sentences = []
+		for csv_row in self._corpus.get_source_files():
+			sentences += self._corpus._read_file(csv_row)
+
+		print sentences
+		sys.exit(1)
+		model = gensim.models.Word2Vec(sentences, size=100, window=5)
+		model.save('gensim.model')
+		self._logger.info('done training vectors with gensim')
+
+	# def _train_thenao(self):
+
+	# 	context = T.vector('context')
+	# 	central = T.vector('context')
+	# 	negative= T.vector('negative')
+
+	# 	epxr = 	T.log(self._sigmoid(T.dot(self._in_vecs[central], self._out_vecs[context].T))) + \
+	# 			T.sum(T.log(self._sigmoid(T.dot(self._in_vecs[central], self._out_vecs[self._neg_samples()].T))))
+
+	# 	grad_central, grad_context = T.grad(expr, [central, context])
 
 	def _train(self):
 
@@ -117,4 +142,7 @@ class VectorSpace:
 		self._logger.info("loading corpus object from corpus.pkl")
 
 		with open('corpus.pkl', 'r') as f:
-			self._corpus = pickle.load(f)
+			self._corpus = cPickle.load(f)
+
+
+

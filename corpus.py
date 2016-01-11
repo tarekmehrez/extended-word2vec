@@ -1,4 +1,4 @@
-import os, csv, sys, pickle
+import os, csv, sys, cPickle
 
 
 from collections import defaultdict
@@ -17,9 +17,11 @@ class Corpus:
 			self._logger.info('corpus.pkl already exists')
 			sys.exit(1)
 
-		self._dir = args[0]
+		self._dir, self._cw = args
 		self._read_dir()
 		self._create_vocab()
+		self._create_ctx_windows()
+		self._save()
 
 	def _read_dir(self):
 
@@ -54,12 +56,27 @@ class Corpus:
 
 		self._logger.info('corpus size: ' + str(self.get_corpus_size()))
 		self._logger.info('vocab size: ' + str(len(self._freq)))
-		self.words_to_idx(self._source_files[0])
-		self._save()
+
+
+	def _create_ctx_windows(self):
+
+		self._logger.info('creating ctx windows')
+
+		self._windows = []
+		vocab = self._freq.keys()
+
+		for csv_row in self._source_files:
+
+			curr = self._read_file(csv_row)
+			idx = map(lambda word: vocab.index(word), curr)
+
+			# TODO add indicator <end of file>
+			self._windows.append(self._context_win(idx))
+
 
 	def _read_file(self, csv_row):
 
-		# TODO clean punctuations, remove stop, frequent and rare words
+		# TODO handle punctuations, stop, frequent and rare words
 		file = csv_row[0]
 		source = csv_row[1]
 
@@ -73,20 +90,27 @@ class Corpus:
 		return curr.split(' ')
 
 
+	def _context_win(self,input):
+
+		padding = lambda x: 0 if x < 0 else x
+		windows = []
+		for idx in input:
+			windows += input[ padding ( idx - self._cw ) : idx + self._cw + 1 ]
+
+		return windows
+
 	def _save(self):
 		self._logger.info("saving corpus object to corpus.pkl")
 		self._logger = None
 
 		with open('corpus.pkl', 'wb') as f:
-			pickle.dump(self, f)
+			cPickle.dump(self, f)
 
-	def words_to_idx(self,csv_row):
 
-		curr = self._read_file(csv_row)
-		vocab = self._freq.keys()
-		idx = map(lambda word: vocab.index(word), curr)
 
-		return idx
+
+	def get_windows(self):
+		return self._windows
 
 	def get_corpus_size(self):
 		return sum(self._freq.values())
@@ -96,6 +120,3 @@ class Corpus:
 
 	def get_freq(self):
 		return self._freq
-
-	def get_source_files(self):
-		return self._source_files
