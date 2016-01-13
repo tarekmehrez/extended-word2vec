@@ -28,7 +28,6 @@ class Visualizer:
 
 		self._vectors= []
 
-		print self._model
 		for token_vector in self._model.vocab:
 			self._vectors.append(self._model[token_vector])
 
@@ -46,6 +45,6 @@ class Visualizer:
 
 		for label, x, y in zip(self._model.vocab, self._reduced[:, 0], self._reduced[:, 1]):
 			plt.plot(x,y,'x')
-			plt.annotate(label, xy = (x, y), textcoords = 'offset points',ha = 'right', va = 'bottom')
+			plt.annotate(label, xy = (x, y))
 
 		plt.show()

@@ -23,9 +23,9 @@ class VectorSpace:
 		self._freq = self._corpus.get_freq()
 		self._vocab = self._corpus.get_vocab()
 
-		self._in_vecs = np.random.rand(len(self._vocab),self._dim)
-		self._out_vecs =  np.random.rand(len(self._vocab),self._dim)
-		self._train_gensim()
+		# self._train_gensim()
+
+		self._train_theano()
 
 	def _train_gensim(self):
 		self._logger.info('starting training vectors with gensim')
@@ -57,19 +57,39 @@ class VectorSpace:
 		model.save('gensim.model')
 		self._logger.info('done training vectors with gensim')
 
-	# def _train_thenao(self):
+	def _train_theano(self):
 
-	# 	context = T.vector('context')
-	# 	central = T.vector('context')
-	# 	negative= T.vector('negative')
 
-	# 	epxr = 	T.log(self._sigmoid(T.dot(self._in_vecs[central], self._out_vecs[context].T))) + \
-	# 			T.sum(T.log(self._sigmoid(T.dot(self._in_vecs[central], self._out_vecs[self._neg_samples()].T))))
+		self._logger.info('initializing training with theano')
 
-	# 	grad_central, grad_context = T.grad(expr, [central, context])
+		in_vecs = theano.shared(np.random.rand(len(self._vocab),self._dim))
+		out_vecs = theano.shared(np.random.rand(len(self._vocab),self._dim))
+
+		context = T.ivector('context')
+		central = T.ivector('context')
+		negative= T.ivector('negative')
+
+		t = in_vecs[context]
+		j = out_vecs[central]
+		i = out_vecs[negative]
+
+
+		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
+		neg_term = T.sum(T.log(T.nnet.sigmoid(T.dot(t, i.T))))
+
+		expr = T.sum(ctx_term + neg_term)
+		grad_central, grad_context = T.grad(expr, [t, j])
+
+		self._logger.info('compiling theano function')
+
+		train = theano.function(inputs=[central,context,negative],outputs=[grad_central,grad_context])
+
+		self._logger.info('done compiling theano function')
 
 	def _train(self):
 
+		self._in_vecs = np.random.rand(len(self._vocab),self._dim)
+		self._out_vecs =  np.random.rand(len(self._vocab),self._dim)
 		self._logger.info('starting training vectors')
 
 		upper = lambda x: 0 if x < 0 else x
