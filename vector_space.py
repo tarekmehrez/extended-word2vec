@@ -5,7 +5,6 @@ import theano
 import numpy as np
 
 from theano import tensor as T
-from sklearn.decomposition import PCA
 
 
 class VectorSpace:
@@ -71,15 +70,15 @@ class VectorSpace:
 
 		self._logger.info('initializing training with theano')
 
-		in_vecs = theano.shared(np.random.rand(len(self._vocab),self._dim))
-		out_vecs = theano.shared(np.random.rand(len(self._vocab),self._dim))
+		in_vecs = theano.shared(0.2 * np.random.uniform(-1.0, 1.0, (len(self._vocab),self._dim)).astype(theano.config.floatX))
+		out_vecs = theano.shared(0.2 * np.random.uniform(-1.0, 1.0, (len(self._vocab),self._dim)).astype(theano.config.floatX))
 
-		context = T.ivector('context')
 		central = T.ivector('context')
+		context = T.ivector('context')
 		negative= T.ivector('negative')
 
-		t = in_vecs[context]
-		j = out_vecs[central]
+		t = in_vecs[central]
+		j = out_vecs[context]
 		i = out_vecs[negative]
 
 
@@ -97,6 +96,11 @@ class VectorSpace:
 
 		self._logger.info('computing gradients')
 
+		for idx, window in enumerate(self._windows):
+			key = window.keys()[0]
+			result = train([key], window[key], self._neg_samples[idx])
+			# print result
+		self._logger.info('done gradients')
 
 	# raw implementation of regularized word2vec
 

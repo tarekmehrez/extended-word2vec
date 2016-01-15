@@ -95,6 +95,7 @@ class Corpus:
 
 	def _context_win(self,input):
 
+		input = input[:1000]
 		padding = lambda x: 0 if x < 0 else x
 		windows = []
 		for idx, item in enumerate(input):
@@ -113,10 +114,10 @@ class Corpus:
 		freq = np.power(freq / np.sum(freq), 0.75) # unigrams ^ 3/4
 		dist = freq * (1 / np.sum(freq)) #normalize probabs
 
-		self._neg_samples = np.zeros((len(self._windows), samples, self._cw), dtype=np.int32)
+		self._neg_samples = np.zeros((len(self._windows), samples + self._cw), dtype=np.int32)
 
 		for example in  range(len(self._neg_samples)):
-			self._neg_samples[example] = np.random.choice(idx, (samples, self._cw), p=dist)
+			self._neg_samples[example] = np.random.choice(idx, (samples + self._cw), p=dist)
 
 
 
