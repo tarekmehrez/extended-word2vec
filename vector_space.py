@@ -28,8 +28,11 @@ class VectorSpace:
 
 
 		# self._train_gensim()
-
+		# self._train_raw()
 		self._train_theano()
+
+
+	# basic word2vec in gensim (benchmark)
 
 	def _train_gensim(self):
 		self._logger.info('starting training vectors with gensim')
@@ -59,6 +62,9 @@ class VectorSpace:
 
 		model.save('gensim.model')
 		self._logger.info('done training vectors with gensim')
+
+
+	# theano model of regularized word2vec
 
 	def _train_theano(self):
 
@@ -92,9 +98,9 @@ class VectorSpace:
 		self._logger.info('computing gradients')
 
 
+	# raw implementation of regularized word2vec
 
-
-	def _train(self):
+	def _train_raw(self):
 
 		self._in_vecs = np.random.rand(len(self._vocab),self._dim)
 		self._out_vecs =  np.random.rand(len(self._vocab),self._dim)
@@ -149,6 +155,7 @@ class VectorSpace:
 	def _sig_grad(self,x,y):
 		return (1 - self._sigmoid(np.dot(x,y.T)))
 
+	# raw implementation of cost function
 
 	# def _cost(self):
 
