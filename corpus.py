@@ -73,7 +73,7 @@ class Corpus:
 			idx = map(lambda word: vocab.index(word), curr)
 
 			# TODO add indicator <end of file>
-			self._windows.append(self._context_win(idx))
+			self._windows += self._context_win(idx)
 
 
 	def _read_file(self, csv_row):
@@ -92,12 +92,13 @@ class Corpus:
 		return curr.split(' ')
 
 
+
 	def _context_win(self,input):
 
 		padding = lambda x: 0 if x < 0 else x
 		windows = []
-		for idx in input:
-			windows += input[ padding ( idx - self._cw ) : idx + self._cw + 1 ]
+		for idx, item in enumerate(input):
+			windows.append({item : input[ padding ( idx - self._cw ) : idx + self._cw + 1 ]})
 
 		return windows
 
@@ -107,14 +108,17 @@ class Corpus:
 		self._logger.info('creating neg samples')
 
 
-		freq = np.array(self._freq.values(), dtype=float)
-		idx = range(len(self._freq.keys()))
-		freq = np.power(freq / np.sum(freq), 3/4)
-		neg_dist = stats.rv_discrete(name='_neg_dist', values=(idx, freq))
+		idx = range(len(self._freq))
+		freq = np.array(self._freq.values(), dtype=np.float)
+		freq = np.power(freq / np.sum(freq), 0.75) # unigrams ^ 3/4
+		dist = freq * (1 / np.sum(freq)) #normalize probabs
 
-		self._neg_samples = []
-		for i in self._windows:
-			self._neg_samples += neg_dist.rvs(size=samples).tolist()
+		self._neg_samples = np.zeros((len(self._windows), samples), dtype=np.int32)
+
+		for example in  range(len(self._neg_samples)):
+			self._neg_samples[example] = np.random.choice(idx, samples, p=dist)
+
+
 
 
 	def _save(self):

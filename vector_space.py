@@ -15,6 +15,7 @@ class VectorSpace:
 		self._logger = logger
 		self._load_corpus()
 
+
 		self._logger.info('initializing vector space')
 
 
@@ -22,6 +23,9 @@ class VectorSpace:
 
 		self._freq = self._corpus.get_freq()
 		self._vocab = self._corpus.get_vocab()
+		self._windows = self._corpus.get_windows()
+		self._neg_samples = self._corpus.get_neg_samples()
+
 
 		# self._train_gensim()
 
@@ -51,7 +55,6 @@ class VectorSpace:
 		model = gensim.models.Word2Vec()
 		model.build_vocab(sentences)
 
-		print model.vocab
 		model.train(sentences)
 
 		model.save('gensim.model')
@@ -85,6 +88,11 @@ class VectorSpace:
 		train = theano.function(inputs=[central,context,negative],outputs=[grad_central,grad_context])
 
 		self._logger.info('done compiling theano function')
+
+		self._logger.info('computing gradients')
+
+
+
 
 	def _train(self):
 
