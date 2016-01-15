@@ -116,7 +116,7 @@ class Corpus:
 		self._neg_samples = np.zeros((len(self._windows), samples, self._cw), dtype=np.int32)
 
 		for example in  range(len(self._neg_samples)):
-			self._neg_samples[example] = np.random.choice(idx, (samples, self_cw), p=dist)
+			self._neg_samples[example] = np.random.choice(idx, (samples, self._cw), p=dist)
 
 
 
