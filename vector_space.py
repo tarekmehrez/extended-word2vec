@@ -73,7 +73,7 @@ class VectorSpace:
 		in_vecs = theano.shared(0.2 * np.random.uniform(-1.0, 1.0, (len(self._vocab),self._dim)).astype(theano.config.floatX))
 		out_vecs = theano.shared(0.2 * np.random.uniform(-1.0, 1.0, (len(self._vocab),self._dim)).astype(theano.config.floatX))
 
-		central = T.ivector('context')
+		central = T.ivector('central')
 		context = T.ivector('context')
 		negative= T.ivector('negative')
 
@@ -83,22 +83,32 @@ class VectorSpace:
 
 
 		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
-		neg_term = T.sum(T.log(T.nnet.sigmoid(T.dot(t, i.T))))
+		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, i.T))))
 
-		expr = T.sum(ctx_term + neg_term)
-		grad_central, grad_context = T.grad(expr, [t, j])
+		cost = T.sum(ctx_term + neg_term)
+
+		# updates= T.set_subtensor(t, t + grad_central)
+		# up2 = T.inc_subtensor(j, grad_context*self._alpha)
+		upd_central = (in_vecs, T.inc_subtensor(t, -(self._alpha * T.grad(cost, t))))
+		upd_context = (out_vecs, T.inc_subtensor(j, -(self._alpha * T.grad(cost, j))))
+
 
 		self._logger.info('compiling theano function')
 
-		train = theano.function(inputs=[central,context,negative],outputs=[grad_central,grad_context])
+
+		train = theano.function(inputs=[central,context,negative], updates=[upd_central, upd_context])
 
 		self._logger.info('done compiling theano function')
 
 		self._logger.info('computing gradients')
 
-		for idx, window in enumerate(self._windows):
-			key = window.keys()[0]
-			result = train([key], window[key], self._neg_samples[idx])
+		tokens, ctx, negs = self._corpus.get_data()
+
+		for epoch in range(self._epochs):
+			self._logger.debug('epoch: ' + str(epoch))
+
+			for i in tokens:
+				train([tokens[i]], ctx[i], negs[i])
 			# print result
 		self._logger.info('done gradients')
 

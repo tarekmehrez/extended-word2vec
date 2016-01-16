@@ -25,6 +25,10 @@ class Corpus:
 		self._create_neg_samples()
 		self._save()
 
+		print len(self._tokens)
+		print len(self._windows)
+		print self._neg_samples.shape
+
 	def _read_dir(self):
 
 		self._logger.info('reading source files & named entities...')
@@ -65,6 +69,8 @@ class Corpus:
 		self._logger.info('creating ctx windows')
 
 		self._windows = []
+		self._tokens = []
+
 		vocab = self._freq.keys()
 
 		for csv_row in self._source_files:
@@ -94,12 +100,13 @@ class Corpus:
 
 
 	def _context_win(self,input):
-
 		input = input[:1000]
+		self._tokens += input
+
 		padding = lambda x: 0 if x < 0 else x
 		windows = []
 		for idx, item in enumerate(input):
-			windows.append({item : input[ padding ( idx - self._cw ) : idx + self._cw + 1 ]})
+			windows.append(input[ padding ( idx - self._cw ) : idx + self._cw + 1 ])
 
 		return windows
 
@@ -130,6 +137,8 @@ class Corpus:
 			cPickle.dump(self, f)
 
 
+	def get_data(self):
+		return self._tokens, self._windows, self._neg_samples
 
 	def get_neg_samples(self):
 		return self._neg_samples
