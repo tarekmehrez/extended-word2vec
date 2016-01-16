@@ -25,10 +25,6 @@ class Corpus:
 		self._create_neg_samples()
 		self._save()
 
-		print len(self._tokens)
-		print len(self._windows)
-		print self._neg_samples.shape
-
 	def _read_dir(self):
 
 		self._logger.info('reading source files & named entities...')
@@ -59,10 +55,9 @@ class Corpus:
 
 
 		self._freq = OrderedDict(sorted(self._freq.items()))
-
+		self._freq['<PADDING_TOKEN>']=0
 		self._logger.info('corpus size: ' + str(self.get_corpus_size()))
 		self._logger.info('vocab size: ' + str(len(self._freq)))
-
 
 	def _create_ctx_windows(self):
 
@@ -79,8 +74,10 @@ class Corpus:
 			idx = map(lambda word: vocab.index(word), curr)
 
 			# TODO add indicator <end of file>
-			self._windows += self._context_win(idx)
+			self._context_win(idx)
 
+		self._windows = np.array(self._windows, dtype=np.int32)
+		self._tokens = np.array(self._tokens, dtype=np.int32)
 
 	def _read_file(self, csv_row):
 
@@ -95,20 +92,18 @@ class Corpus:
 			new = e + '_' + source
 			curr = curr.replace(e, new)
 
-		return curr.split(' ')
+		curr = curr.split(' ')
+
+		return curr
 
 
 
 	def _context_win(self,input):
-		input = input[:1000]
+
+		lpadded = self._cw // 2 * [-1] + input + self._cw // 2 * [-1]
+		self._windows += [lpadded[i:(i + self._cw)] for i in range(len(input))]
 		self._tokens += input
 
-		padding = lambda x: 0 if x < 0 else x
-		windows = []
-		for idx, item in enumerate(input):
-			windows.append(input[ padding ( idx - self._cw ) : idx + self._cw + 1 ])
-
-		return windows
 
 
 	def _create_neg_samples(self, samples=5):
@@ -125,8 +120,6 @@ class Corpus:
 
 		for example in  range(len(self._neg_samples)):
 			self._neg_samples[example] = np.random.choice(idx, (samples + self._cw), p=dist)
-
-
 
 
 	def _save(self):
