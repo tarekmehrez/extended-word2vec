@@ -37,11 +37,9 @@ class VectorSpace:
 
 	def _train_theano(self):
 
-		model = TheanoModel(self._logger,self._vocab, self._args)
+		model = TheanoModel(self._logger,self._vocab, self._args,self._corpus.get_data())
 		model.compile()
-
-		tokens, ctx, negs = self._corpus.get_data()
-		model.train(tokens, ctx, negs)
+		model.train()
 
 
 

@@ -99,7 +99,6 @@ class Corpus:
 
 
 	def _context_win(self,input):
-
 		lpadded = self._cw // 2 * [-1] + input + self._cw // 2 * [-1]
 		self._windows += [lpadded[i:(i + self._cw)] for i in range(len(input))]
 		self._tokens += input
@@ -127,7 +126,7 @@ class Corpus:
 		self._logger = None
 
 		with open('corpus.pkl', 'wb') as f:
-			cPickle.dump(self, f)
+			cPickle.dumps(self, f, protocol=cPickle.HIGHEST_PROTOCOL)
 
 
 	def get_data(self):
