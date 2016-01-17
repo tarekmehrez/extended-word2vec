@@ -126,7 +126,7 @@ class Corpus:
 		self._logger = None
 
 		with open('corpus.pkl', 'wb') as f:
-			cPickle.dumps(self, f, protocol=cPickle.HIGHEST_PROTOCOL)
+			cPickle.dump(self, f, protocol=cPickle.HIGHEST_PROTOCOL)
 
 
 	def get_data(self):
