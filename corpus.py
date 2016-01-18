@@ -99,6 +99,7 @@ class Corpus:
 
 
 	def _context_win(self,input):
+		# input = input[:1000]
 		lpadded = self._cw // 2 * [-1] + input + self._cw // 2 * [-1]
 		self._windows += [lpadded[i:(i + self._cw)] for i in range(len(input))]
 		self._tokens += input
