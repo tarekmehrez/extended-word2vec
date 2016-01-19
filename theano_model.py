@@ -13,8 +13,8 @@ class TheanoModel:
 		self._opt_speed()
 		dim, self._epochs, self._batch_size, self._alpha, self._reg = args
 
-		self._in_vecs = theano.shared(np.random.uniform(-1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
-		self._out_vecs = theano.shared(np.random.uniform(-1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
+		self._in_vecs = theano.shared(np.random.uniform(5 * -1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
+		self._out_vecs = theano.shared(np.random.uniform(5 * -1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
 
 
 
@@ -27,8 +27,13 @@ class TheanoModel:
 		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
 		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, n.T))))
 		cost = T.sum(ctx_term + neg_term)
-		grad_central, grad_context = T.grad(cost, [t,j])
-		return T.sum(ctx_term + neg_term)
+
+		grad_central, grad_context = T.grad(cost,[t,j])
+
+		updates = ((self._in_vecs, T.inc_subtensor(t, (self._alpha * grad_central))), \
+		(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context))))
+
+		return cost, updates
 
 	def compile(self):
 		self._logger.info('compiling theano function')
@@ -37,8 +42,8 @@ class TheanoModel:
 		windows  = T.imatrix('windows')
 		neg_samples  = T.imatrix('neg_samples')
 
-		result, _ = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples])
-		self._f = theano.function([tokens, windows, neg_samples], T.sum(result))
+		result, updates = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples])
+		self._f = theano.function([tokens, windows, neg_samples], T.mean(result), updates=updates)
 		self._f.trust_input = True
 
 
