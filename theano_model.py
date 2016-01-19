@@ -1,5 +1,5 @@
 import theano
-
+import cPickle
 
 import numpy as np
 from theano import tensor as T
@@ -57,7 +57,12 @@ class TheanoModel:
 	def train(self, data):
 
 		self._tokens, self._windows, self._neg_samples = data
+		self._tokens, self._windows, self._neg_samples = self._tokens[:1000], self._windows[:1000], self._neg_samples[:1000]
+
+
 		self._logger.info('started training model')
+
+		steps = self._epochs / 5
 
 		for epoch in range(self._epochs):
 
@@ -67,6 +72,9 @@ class TheanoModel:
 
 			self._shuffle_data()
 			self._logger.info('cost: ' + str(cost))
+
+			if epoch in range(steps,self._epochs,steps):
+				self._save_model(epoch)
 
 		self._logger.info('done training model')
 
@@ -82,7 +90,7 @@ class TheanoModel:
 
 
 	def _save_model(self, step):
-		file = 'theano.model.' + str(step)
+		file = 'theano-' + str(step) +'.model'
 		self._logger.info("writing model to " + str(file) )
 
 		with open(file, 'wb') as f:
