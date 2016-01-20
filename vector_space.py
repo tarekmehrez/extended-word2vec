@@ -1,10 +1,6 @@
 import cPickle, sys
 
-import gensim
-import theano
-import numpy as np
-
-from theano import tensor as T
+from gensim_model import GensimModel
 from theano_model import TheanoModel
 
 class VectorSpace:
@@ -26,13 +22,13 @@ class VectorSpace:
 		self._neg_samples = self._corpus.get_neg_samples()
 
 
-		# self._train_gensim()
-		# self._train_raw()
-		self._train_theano()
+		self._train_gensim()
+
+		# self._train_theano()
 
 
 	def _train_gensim(self):
-		model = GensimModel(logger, self._corpus)
+		model = GensimModel(self._logger, self._corpus)
 		model.train()
 
 	def _train_theano(self):

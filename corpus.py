@@ -129,6 +129,9 @@ class Corpus:
 		with open('corpus.pkl', 'wb') as f:
 			cPickle.dump(self, f, protocol=cPickle.HIGHEST_PROTOCOL)
 
+		with open('vocab.pkl', 'wb') as f:
+			cPickle.dump(self._freq, f, protocol=cPickle.HIGHEST_PROTOCOL)
+
 
 	def get_data(self):
 		return self._tokens, self._windows, self._neg_samples
