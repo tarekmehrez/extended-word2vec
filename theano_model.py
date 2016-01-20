@@ -57,7 +57,7 @@ class TheanoModel:
 	def train(self, data):
 
 		self._tokens, self._windows, self._neg_samples = data
-		self._tokens, self._windows, self._neg_samples = self._tokens[:1000], self._windows[:1000], self._neg_samples[:1000]
+		#self._tokens, self._windows, self._neg_samples = self._tokens[:1000], self._windows[:1000], self._neg_samples[:1000]
 
 
 		self._logger.info('started training model')
