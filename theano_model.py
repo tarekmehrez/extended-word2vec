@@ -13,8 +13,8 @@ class TheanoModel:
 		self._opt_speed()
 		dim, self._epochs, self._batch_size, self._alpha, self._reg = args
 
-		self._in_vecs = theano.shared(np.random.uniform(5 * -1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
-		self._out_vecs = theano.shared(np.random.uniform(5 * -1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
+		self._in_vecs = theano.shared(np.random.uniform(-1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
+		self._out_vecs = theano.shared(np.random.uniform(-1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
 
 
 
