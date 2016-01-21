@@ -18,11 +18,33 @@ class TheanoModel:
 
 
 
-	def _cost(self,cen_idx,ctx_idx,neg_idx):
+	# def _cost(self,cen_idx,ctx_idx,neg_idx):
 
-		t = self._in_vecs[cen_idx]
-		j = self._out_vecs[ctx_idx]
-		n = self._out_vecs[neg_idx]
+		# t = self._in_vecs[cen_idx]
+		# j = self._out_vecs[ctx_idx]
+		# n = self._out_vecs[neg_idx]
+
+		# ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
+		# neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, n.T))))
+		# cost = T.sum(ctx_term + neg_term)
+
+		# grad_central, grad_context = T.grad(cost,[t,j])
+
+		# updates = ((self._in_vecs, T.inc_subtensor(t, (self._alpha * grad_central))), \
+		# (self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context))))
+
+		# return cost, updates
+
+	def compile(self):
+		self._logger.info('compiling theano function')
+
+		tokens  = T.imatrix('tokens')
+		windows  = T.imatrix('windows')
+		neg_samples  = T.imatrix('neg_samples')
+
+		t = self._in_vecs[tokens]
+		j = self._out_vecs[windows]
+		n = self._out_vecs[neg_samples]
 
 		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
 		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, n.T))))
@@ -33,17 +55,11 @@ class TheanoModel:
 		updates = ((self._in_vecs, T.inc_subtensor(t, (self._alpha * grad_central))), \
 		(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context))))
 
-		return cost, updates
 
-	def compile(self):
-		self._logger.info('compiling theano function')
 
-		tokens  = T.ivector('tokens')
-		windows  = T.imatrix('windows')
-		neg_samples  = T.imatrix('neg_samples')
+		# result, updates = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples])
 
-		result, updates = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples])
-		self._f = theano.function([tokens, windows, neg_samples], T.mean(result), updates=updates)
+		self._f = theano.function([tokens, windows, neg_samples], T.mean(cost), updates=updates)
 		self._f.trust_input = True
 
 
@@ -68,9 +84,9 @@ class TheanoModel:
 
 			self._logger.info('starting epoch: ' + str(epoch))
 
-			cost = self._f(self._tokens, self._windows, self._neg_samples)
+			cost = self._f(self._tokens.reshape(self._tokens.shape[0],1), self._windows, self._neg_samples)
 
-			self._shuffle_data()
+			# self._shuffle_data()
 			self._logger.info('cost: ' + str(cost))
 
 			if epoch in range(steps,self._epochs,steps):

@@ -22,9 +22,9 @@ class VectorSpace:
 		self._neg_samples = self._corpus.get_neg_samples()
 
 
-		self._train_gensim()
+		# self._train_gensim()
 
-		# self._train_theano()
+		self._train_theano()
 
 
 	def _train_gensim(self):
