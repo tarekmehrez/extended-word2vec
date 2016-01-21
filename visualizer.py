@@ -1,8 +1,10 @@
-import cPickle
+import cPickle, sys
 import gensim
+
+
 import matplotlib.pyplot as plt
-import sys
 import numpy as np
+
 from sklearn.decomposition import PCA
 
 

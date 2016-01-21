@@ -1,5 +1,6 @@
-import numpy as np
 import gensim
+
+import numpy as np
 
 class GensimModel:
 

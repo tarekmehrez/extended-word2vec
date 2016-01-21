@@ -1,12 +1,12 @@
+import cPickle, os, sys
 import theano
-import cPickle
 
 import numpy as np
 from theano import tensor as T
 
 class TheanoModel:
 
-	def __init__(self,logger,vocab, args,):
+	def __init__(self,logger,vocab, args, ):
 		self._logger = logger
 
 		self._logger.info('initializing theano model')
@@ -18,33 +18,11 @@ class TheanoModel:
 
 
 
-	# def _cost(self,cen_idx,ctx_idx,neg_idx):
+	def _cost(self,cen_idx,ctx_idx,neg_idx):
 
-		# t = self._in_vecs[cen_idx]
-		# j = self._out_vecs[ctx_idx]
-		# n = self._out_vecs[neg_idx]
-
-		# ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
-		# neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, n.T))))
-		# cost = T.sum(ctx_term + neg_term)
-
-		# grad_central, grad_context = T.grad(cost,[t,j])
-
-		# updates = ((self._in_vecs, T.inc_subtensor(t, (self._alpha * grad_central))), \
-		# (self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context))))
-
-		# return cost, updates
-
-	def compile(self):
-		self._logger.info('compiling theano function')
-
-		tokens  = T.imatrix('tokens')
-		windows  = T.imatrix('windows')
-		neg_samples  = T.imatrix('neg_samples')
-
-		t = self._in_vecs[tokens]
-		j = self._out_vecs[windows]
-		n = self._out_vecs[neg_samples]
+		t = self._in_vecs[cen_idx]
+		j = self._out_vecs[ctx_idx]
+		n = self._out_vecs[neg_idx]
 
 		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
 		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, n.T))))
@@ -55,11 +33,18 @@ class TheanoModel:
 		updates = ((self._in_vecs, T.inc_subtensor(t, (self._alpha * grad_central))), \
 		(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context))))
 
+		return cost, updates
 
+	def compile(self):
+		self._logger.info('compiling theano function')
 
-		# result, updates = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples])
+		tokens  = T.ivector('tokens')
+		windows  = T.imatrix('windows')
+		neg_samples  = T.imatrix('neg_samples')
 
-		self._f = theano.function([tokens, windows, neg_samples], T.mean(cost), updates=updates)
+		result, updates = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples])
+
+		self._f = theano.function([tokens, windows, neg_samples], T.mean(result), updates=updates)
 		self._f.trust_input = True
 
 
@@ -73,9 +58,11 @@ class TheanoModel:
 	def train(self, data):
 
 		self._tokens, self._windows, self._neg_samples = data
-		#self._tokens, self._windows, self._neg_samples = self._tokens[:1000], self._windows[:1000], self._neg_samples[:1000]
+		# self._tokens, self._windows, self._neg_samples = self._tokens[:1000], self._windows[:1000], self._neg_samples[:1000]
 
+		# self._tokens = self._tokens.reshape(self._tokens.shape[0],1)
 
+		print self._tokens.shape, self._windows.shape, self._neg_samples.shape
 		self._logger.info('started training model')
 
 		steps = self._epochs / 5
@@ -84,14 +71,15 @@ class TheanoModel:
 
 			self._logger.info('starting epoch: ' + str(epoch))
 
-			cost = self._f(self._tokens.reshape(self._tokens.shape[0],1), self._windows, self._neg_samples)
+			cost = self._f(self._tokens, self._windows, self._neg_samples)
 
-			# self._shuffle_data()
+			self._shuffle_data()
 			self._logger.info('cost: ' + str(cost))
 
 			if epoch in range(steps,self._epochs,steps):
 				self._save_model(epoch)
 
+		self._save_model('final')
 		self._logger.info('done training model')
 
 
@@ -106,7 +94,11 @@ class TheanoModel:
 
 
 	def _save_model(self, step):
-		file = 'theano-' + str(step) +'.model'
+
+		if not os.path.exists('curr-models'):
+			os.makedirs('curr-models')
+
+		file = 'curr-models/theano-' + str(step) +'.model'
 		self._logger.info("writing model to " + str(file) )
 
 		with open(file, 'wb') as f:
