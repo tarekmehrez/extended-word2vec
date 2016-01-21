@@ -31,19 +31,19 @@ class ArgParser:
 									help='input directory containing text files, entities file & sources.csv')
 
 		self._parser.add_argument(	'--dim', action='store', dest='dim',
-									help='vector dimensions, DEFUALT: 100',type=int,default=300)
+									help='vector dimensions, DEFUALT: 100',type=int,default=100)
 
 		self._parser.add_argument(	'--cw', action='store', dest='cw',
-									help='context window size, DEFUALT: 3',type=int,default=5)
+									help='context window size, DEFUALT: 3',type=int,default=7)
 
 		self._parser.add_argument(	'--iter', action='store', dest='iter',
-									help='learning iterations, DEFUALT: 100',type=int,default=50)
+									help='learning iterations, DEFUALT: 100',type=int,default=10)
 
 		self._parser.add_argument(	'--batch', action='store', dest='batch',
 									help='batch size, DEFUALT: 100',type=float,default=100)
 
 		self._parser.add_argument(	'--alpha', action='store', dest='alpha',
-									help='learning rate, DEFUALT: 0.1',type=float,default=0.01)
+									help='learning rate, DEFUALT: 0.1',type=float,default=0.025)
 
 		self._parser.add_argument(	'--reg', action='store', dest='reg',
 									help='regularization term, DEFUALT: 0.1',type=float,default=0.1)
