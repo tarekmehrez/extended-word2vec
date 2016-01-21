@@ -27,7 +27,8 @@ class TheanoModel:
 		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
 		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, n.T))))
 
-		reg_term, _ = theano.scan(fn=self._regularizer, sequences=[e_idx, parallel_e_idx])
+
+		reg_term = self._regularizer(e_idx, parallel_e_idx)
 		cost = T.sum(ctx_term + neg_term) + (self._reg * T.sum(reg_term))
 
 		grad_central, grad_context = T.grad(cost,[t,j])
