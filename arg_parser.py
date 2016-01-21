@@ -40,14 +40,14 @@ class ArgParser:
 									help='learning iterations, DEFUALT: 10',type=int,default=10)
 
 		self._parser.add_argument(	'--neg', action='store', dest='neg',
-									help='negative samples, DEFUALT: 3',type=int,default=3)
+									help='negative samples, DEFUALT: 5',type=int,default=5)
 
 
 		self._parser.add_argument(	'--batch', action='store', dest='batch',
 									help='batch size, DEFUALT: 25',type=float,default=25)
 
 		self._parser.add_argument(	'--alpha', action='store', dest='alpha',
-									help='learning rate, DEFUALT: 0.025',type=float,default=0.025)
+									help='learning rate, DEFUALT: 0.01',type=float,default=0.01)
 
 		self._parser.add_argument(	'--reg', action='store', dest='reg',
 									help='regularization term, DEFUALT: 0.01',type=float,default=0.01)

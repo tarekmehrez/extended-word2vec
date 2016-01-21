@@ -13,12 +13,12 @@ class TheanoModel:
 		self._opt_speed()
 		dim, self._epochs, self._batch_size, self._alpha, self._reg, self._run = args[1:]
 
-		self._in_vecs = theano.shared(np.random.uniform(-1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
-		self._out_vecs = theano.shared(np.random.uniform(-1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
+		self._in_vecs = theano.shared(np.random.uniform(5 * -1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
+		self._out_vecs = theano.shared(np.random.uniform(5 * -1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
 
 
 
-	def _cost(self,cen_idx,ctx_idx, neg_idx,e_idx, parallel_e_idx):
+	def _cost(self,cen_idx,ctx_idx, neg_idx):
 
 		t = self._in_vecs[cen_idx]
 		j = self._out_vecs[ctx_idx]
@@ -28,9 +28,9 @@ class TheanoModel:
 		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, n.T))))
 
 
-		reg_term = self._regularizer(e_idx, parallel_e_idx)
+		# reg_term = self._regularizer(e_idx, parallel_e_idx)
 		cost = T.sum(ctx_term + neg_term)
-		(self._reg * T.sum(reg_term))
+		# (self._reg * T.sum(reg_term))
 
 		grad_central, grad_context = T.grad(cost,[t,j])
 
@@ -62,8 +62,8 @@ class TheanoModel:
 		entities = T.ivector('entities')
 		parallel_entities = T.imatrix('parallel_entities')
 
-		result, updates = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples], non_sequences=[entities, parallel_entities])
-		self._f = theano.function(inputs=[tokens, windows, neg_samples, entities, parallel_entities], outputs=T.mean(result),updates=updates)
+		result, updates = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples])
+		self._f = theano.function(inputs=[tokens, windows, neg_samples], outputs=T.mean(result),updates=updates)
 		self._f.trust_input = True
 
 
@@ -87,7 +87,7 @@ class TheanoModel:
 
 			self._logger.info('starting epoch: ' + str(epoch))
 
-			cost = self._f(self._tokens, self._windows, self._neg_samples, self._ents, self._p_ents)
+			cost = self._f(self._tokens, self._windows, self._neg_samples)
 
 			self._shuffle_data()
 
@@ -100,7 +100,7 @@ class TheanoModel:
 		self._logger.info('done training model')
 
 
-	def shuffle_data(self):
+	def _shuffle_data(self):
 
 		data = np.hstack((self._windows, self._neg_samples))
 		data = np.column_stack((self._tokens, data))
