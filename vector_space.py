@@ -31,7 +31,7 @@ class VectorSpace:
 
 		model = TheanoModel(self._logger,self._corpus.get_vocab(), self._args)
 		model.compile()
-		model.train(self._corpus.get_sources())
+		model.train(self._corpus.get_data())
 
 
 	def _load_corpus(self):

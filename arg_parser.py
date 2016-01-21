@@ -34,7 +34,7 @@ class ArgParser:
 									help='vector dimensions, DEFUALT: 100',type=int,default=100)
 
 		self._parser.add_argument(	'--cw', action='store', dest='cw',
-									help='context window size, DEFUALT: 10',type=int,default=10)
+									help='context window size, DEFUALT: 5',type=int,default=5)
 
 		self._parser.add_argument(	'--iter', action='store', dest='iter',
 									help='learning iterations, DEFUALT: 10',type=int,default=10)
@@ -50,7 +50,11 @@ class ArgParser:
 									help='learning rate, DEFUALT: 0.025',type=float,default=0.025)
 
 		self._parser.add_argument(	'--reg', action='store', dest='reg',
-									help='regularization term, DEFUALT: 0.1',type=float,default=0.1)
+									help='regularization term, DEFUALT: 0.01',type=float,default=0.01)
+
+		self._parser.add_argument(	'--run', action='store', dest='run',
+									help='run number')
+
 
 		self._parser.add_argument(	'--model', action='store', dest='model',
 									help='vector space to be visualized')
@@ -90,7 +94,7 @@ class ArgParser:
 				self._logger.info("you can only using gensim or theano")
 				self._help_exit()
 
-			return ('train', results.train, results.dim, results.iter, results.batch, results.alpha, results.reg)
+			return ('train', results.train, results.dim, results.iter, results.batch, results.alpha, results.reg, results.run)
 
 		if results.plot:
 			if results.corpus or results.train:
