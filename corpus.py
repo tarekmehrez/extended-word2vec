@@ -23,7 +23,7 @@ class Corpus:
 			sys.exit(1)
 
 		self._args = args
-		self._dir, self._cw = args
+		self._dir, self._cw, self._samples = args
 
 		self._read_dir()
 		self._create_vocab()
@@ -31,7 +31,7 @@ class Corpus:
 
 		self._create_ctx_windows()
 		self._create_neg_samples()
-
+		self._create_ent_maps()
 		self._save()
 
 
@@ -89,11 +89,8 @@ class Corpus:
 		for src, obj in self._data_sources.iteritems():
 			obj.ctx_wid(vocab,self._cw)
 
-		# for k in self._my_entities:
-		# 	print self._my_entities[k].get_parallel_entities()
 
-
-	def _create_neg_samples(self, samples=5):
+	def _create_neg_samples(self):
 
 		self._logger.info('creating neg samples')
 
@@ -104,8 +101,14 @@ class Corpus:
 		dist = freq * (1 / np.sum(freq)) #normalize probabs
 
 		for src, obj in self._data_sources.iteritems():
-			obj.neg_sam(samples,idx, dist, self._cw)
+			obj.neg_sam(self._samples,idx, dist, self._cw)
 
+	def _create_ent_maps(self):
+
+		self._logger.info('creating entities indices')
+		for src, obj in self._data_sources.iteritems():
+
+			obj.set_p_entities(len(self._data_sources))
 
 	def _save(self):
 		self._logger.info("saving corpus object to corpus.pkl")
@@ -122,6 +125,8 @@ class Corpus:
 	def get_vocab(self):
 		return self._freq.keys()
 
-
 	def get_sources(self):
 		return self._data_sources
+
+	def get_entities(self):
+		return self._entities

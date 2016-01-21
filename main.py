@@ -15,6 +15,7 @@ parser = ArgParser(logger)
 args = parser.parse(sys.argv)
 
 
+print args
 if args[0] == 'train':
 	VectorSpace(logger,args[1:])
 elif args[0] == 'corpus':

@@ -12,8 +12,9 @@ class Source:
 		self._global_entities = glob_ents
 		self._my_entities = dict()
 
-
 		self._tokens = []
+
+		self._content = []
 		self._windows = []
 		self._neg_samples = []
 		self._freq = defaultdict(int)
@@ -26,24 +27,25 @@ class Source:
 			for token in curr:
 				self._freq[token] += 1
 
+			self._content.append(curr)
+
 
 		return self._freq
 
 	def ctx_wid(self, global_vocab,cw):
 
 
-		new_dict = self._my_entities
-		for e in new_dict.keys():
+		new_dict = dict()
+
+		for e in self._my_entities:
 			e_idx = global_vocab.index(e)
+			new_dict[e_idx] = self._my_entities[e]
+			new_dict[e_idx].add_parallel_entity(e_idx)
 
-			self._my_entities[e_idx] = self._my_entities.pop(e)
-			self._my_entities[e_idx].add_parallel_entity(e_idx)
+		self._my_entities = new_dict
+		for file_content in self._content:
 
-
-		for file_path in self._files:
-
-			curr = self._read_file(file_path)
-			idx = map(lambda word: global_vocab.index(word), curr)
+			idx = map(lambda word: global_vocab.index(word), file_content)
 			self._tokens += idx
 			self._windows += self._context_win(idx,cw)
 
@@ -90,12 +92,44 @@ class Source:
 			self._neg_samples[example] = np.random.choice(idx, (samples + cw), p=dist)
 
 
+	def shuffle_data(self):
+		data = np.hstack((self._windows, self._neg_samples))
+		data = np.column_stack((self._tokens, data))
+
+		np.random.shuffle(data)
+		self._tokens, self._windows, self._neg_samples = np.split(data, [1, self._windows.shape[1] + 1], axis=1)
+		self._tokens = np.asarray(self._tokens).reshape(-1)
+
+
+	def set_p_entities(self, total_sources):
+		self._e_prime = []
+		for e, obj in self._my_entities.iteritems():
+			curr = obj.get_parallel_entities()
+
+			curr += [-1] * (total_sources - len(curr))
+			self._e_prime.append(curr)
+
+		self._e_prime = np.array(self._e_prime, dtype=np.int32)
+
+
+	def get_windows(self):
+		return self._windows
+
+	def get_neg_samples(self):
+		return self._neg_samples
+
+	def get_tokens(self):
+		return self._tokens
+
 	def add_file(self,file_path):
 		self._files.append(file_path)
 
+	def get_entities(self):
+		return np.array(self._my_entities.keys(), dtype=np.int32)
+
+	def get_p_entities(self):
+		return self._e_prime
 
 	def get_files(self):
 		return self._files
 
-	def get_entities(self):
-		return self._entities

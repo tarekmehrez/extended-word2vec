@@ -13,18 +13,14 @@ class VectorSpace:
 
 		self._logger.info('initializing vector space')
 
-
 		self._args = args
-
-		self._freq = self._corpus.get_freq()
-		self._vocab = self._corpus.get_vocab()
-		self._windows = self._corpus.get_windows()
-		self._neg_samples = self._corpus.get_neg_samples()
+		train_option = args[0]
 
 
-		# self._train_gensim()
-
-		self._train_theano()
+		if train_option == 'gensim':
+			self._train_gensim()
+		else:
+			self._train_theano()
 
 
 	def _train_gensim(self):
@@ -33,10 +29,9 @@ class VectorSpace:
 
 	def _train_theano(self):
 
-		model = TheanoModel(self._logger,self._vocab, self._args)
+		model = TheanoModel(self._logger,self._corpus.get_vocab(), self._args)
 		model.compile()
-		model.train(self._corpus.get_data())
-
+		model.train(self._corpus.get_sources())
 
 
 	def _load_corpus(self):

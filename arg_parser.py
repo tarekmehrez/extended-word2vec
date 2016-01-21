@@ -34,16 +34,20 @@ class ArgParser:
 									help='vector dimensions, DEFUALT: 100',type=int,default=100)
 
 		self._parser.add_argument(	'--cw', action='store', dest='cw',
-									help='context window size, DEFUALT: 3',type=int,default=7)
+									help='context window size, DEFUALT: 10',type=int,default=10)
 
 		self._parser.add_argument(	'--iter', action='store', dest='iter',
-									help='learning iterations, DEFUALT: 100',type=int,default=10)
+									help='learning iterations, DEFUALT: 10',type=int,default=10)
+
+		self._parser.add_argument(	'--neg', action='store', dest='neg',
+									help='negative samples, DEFUALT: 3',type=int,default=3)
+
 
 		self._parser.add_argument(	'--batch', action='store', dest='batch',
-									help='batch size, DEFUALT: 100',type=float,default=100)
+									help='batch size, DEFUALT: 25',type=float,default=25)
 
 		self._parser.add_argument(	'--alpha', action='store', dest='alpha',
-									help='learning rate, DEFUALT: 0.1',type=float,default=0.025)
+									help='learning rate, DEFUALT: 0.025',type=float,default=0.025)
 
 		self._parser.add_argument(	'--reg', action='store', dest='reg',
 									help='regularization term, DEFUALT: 0.1',type=float,default=0.1)
@@ -71,7 +75,7 @@ class ArgParser:
 				self._logger.info("you have to specify the input dir to read the corpus")
 				self._help_exit()
 
-			return ('corpus', results.dir, results.cw)
+			return ('corpus', results.dir, results.cw, results.neg)
 
 		if results.train:
 			if results.corpus or results.plot :
@@ -82,7 +86,11 @@ class ArgParser:
 				self._logger.info("you have to read in the corpus first")
 				self._help_exit()
 
-			return ('train', results.dim, results.iter, results.batch, results.alpha, results.reg)
+			if not (results.train == 'gensim' or results.train == 'theano'):
+				self._logger.info("you can only using gensim or theano")
+				self._help_exit()
+
+			return ('train', results.train, results.dim, results.iter, results.batch, results.alpha, results.reg)
 
 		if results.plot:
 			if results.corpus or results.train:
