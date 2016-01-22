@@ -13,8 +13,8 @@ class TheanoModel:
 		self._opt_speed()
 		dim, self._epochs, self._batch_size, self._alpha, self._reg, self._run = args[1:]
 
-		self._in_vecs = theano.shared(np.random.uniform(5 * -1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
-		self._out_vecs = theano.shared(np.random.uniform(5 * -1.0, 1.0, (len(vocab),dim)).astype(theano.config.floatX))
+		self._in_vecs = theano.shared(np.random.uniform( -2.0, 2.0, (len(vocab),dim)).astype(theano.config.floatX))
+		self._out_vecs = theano.shared(np.random.uniform(-2.0, 2.0, (len(vocab),dim)).astype(theano.config.floatX))
 
 
 
@@ -24,30 +24,27 @@ class TheanoModel:
 		j = self._out_vecs[ctx_idx]
 		n = self._out_vecs[neg_idx]
 
-		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
-		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, n.T))))
 
-
-		reg_term = self._regularizer(e_idx, parallel_e_idx)
-		cost = T.sum(ctx_term + neg_term) + self._reg * T.sum(reg_term)
-
-		grad_central, grad_context = T.grad(cost,[t,j])
-
-		updates = ((self._in_vecs, T.inc_subtensor(t, (self._alpha * grad_central))), \
-		(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context))))
-
-		return cost, updates
-
-
-
-
-	def _regularizer(self, e_idx, parallel_e_idx):
 
 		p = self._out_vecs[e_idx]
 		p_prime = self._out_vecs[parallel_e_idx]
 
 		reg_term = -T.sqr(p - T.mean(p_prime))
-		return reg_term
+
+
+		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
+		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, n.T))))
+
+
+		cost = T.sum(ctx_term + neg_term) + self._reg * T.sum(reg_term)
+
+		grad_central, grad_context = T.grad(cost,[t,j])
+
+		updates = ( (self._in_vecs,  T.inc_subtensor(t, (self._alpha * grad_central)) ), \
+					(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context)) ) )
+					# (self._out_vecs, T.inc_subtensor(p, (self._alpha * grad_p)))      )
+
+		return cost, updates
 
 
 
@@ -81,6 +78,7 @@ class TheanoModel:
 		self._logger.info('started training model')
 		steps = self._epochs / 5
 
+		self._save_model('initial')
 
 		for epoch in range(self._epochs):
 
