@@ -18,28 +18,25 @@ class TheanoModel:
 
 
 
-	def _cost(self,cen_idx,ctx_idx, neg_idx):
+	def _cost(self,cen_idx,ctx_idx, neg_idx,e_idx, parallel_e_idx):
 
 		t = self._in_vecs[cen_idx]
 		j = self._out_vecs[ctx_idx]
 		n = self._out_vecs[neg_idx]
 
-
-		t_dim= t.dimshuffle(0, 'x', 1)
-		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t_dim, j.T)))
-		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t_dim, n.T))))
+		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
+		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, n.T))))
 
 
-		# reg_term = self._regularizer(e_idx, parallel_e_idx)
-		cost = T.sum(ctx_term + neg_term)
-		# (self._reg * T.sum(reg_term))
+		reg_term = self._regularizer(e_idx, parallel_e_idx)
+		cost = T.sum(ctx_term + neg_term) + self._reg * T.sum(reg_term)
 
 		grad_central, grad_context = T.grad(cost,[t,j])
 
-		# updates = ((self._in_vecs, T.inc_subtensor(t, (self._alpha * grad_central))), \
-		# (self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context))))
+		updates = ((self._in_vecs, T.inc_subtensor(t, (self._alpha * grad_central))), \
+		(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context))))
 
-		return cost
+		return cost, updates
 
 
 
@@ -64,10 +61,8 @@ class TheanoModel:
 		entities = T.ivector('entities')
 		parallel_entities = T.imatrix('parallel_entities')
 
-		result = self._cost(tokens, windows, neg_samples)
-
-		# result, updates = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples])
-		self._f = theano.function(inputs=[tokens, windows, neg_samples], outputs=T.mean(result))
+		result, updates = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples], non_sequences=[entities,parallel_entities])
+		self._f = theano.function(inputs=[tokens, windows, neg_samples,entities,parallel_entities], outputs=T.mean(result),updates=updates)
 		self._f.trust_input = True
 
 
@@ -91,7 +86,7 @@ class TheanoModel:
 
 			self._logger.info('starting epoch: ' + str(epoch))
 
-			cost = self._f(self._tokens, self._windows, self._neg_samples)
+			cost = self._f(self._tokens, self._windows, self._neg_samples,self._ents, self._p_ents)
 
 			self._shuffle_data()
 
