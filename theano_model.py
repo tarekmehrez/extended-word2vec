@@ -24,8 +24,10 @@ class TheanoModel:
 		j = self._out_vecs[ctx_idx]
 		n = self._out_vecs[neg_idx]
 
-		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
-		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t, n.T))))
+
+		t_dim= t.dimshuffle(0, 'x', 1)
+		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t_dim, j.T)))
+		neg_term = T.sum(T.log(T.nnet.sigmoid(-T.dot(t_dim, n.T))))
 
 
 		# reg_term = self._regularizer(e_idx, parallel_e_idx)
@@ -34,10 +36,10 @@ class TheanoModel:
 
 		grad_central, grad_context = T.grad(cost,[t,j])
 
-		updates = ((self._in_vecs, T.inc_subtensor(t, (self._alpha * grad_central))), \
-		(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context))))
+		# updates = ((self._in_vecs, T.inc_subtensor(t, (self._alpha * grad_central))), \
+		# (self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context))))
 
-		return cost, updates
+		return cost
 
 
 
@@ -62,8 +64,10 @@ class TheanoModel:
 		entities = T.ivector('entities')
 		parallel_entities = T.imatrix('parallel_entities')
 
-		result, updates = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples])
-		self._f = theano.function(inputs=[tokens, windows, neg_samples], outputs=T.mean(result),updates=updates)
+		result = self._cost(tokens, windows, neg_samples)
+
+		# result, updates = theano.scan(fn=self._cost, sequences=[tokens, windows, neg_samples])
+		self._f = theano.function(inputs=[tokens, windows, neg_samples], outputs=T.mean(result))
 		self._f.trust_input = True
 
 
