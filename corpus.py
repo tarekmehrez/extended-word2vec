@@ -90,12 +90,8 @@ class Corpus:
 		tokens = []
 
 		for src, obj in self._data_sources.iteritems():
-			curr = obj.ctx_wid(vocab,self._cw)
-			tokens += curr[0]
-			windows += curr[1]
+			obj.ctx_wid(vocab,self._cw)
 
-		self._tokens = np.array(tokens, dtype=np.int32)
-		self._windows = np.array(windows, dtype=np.int32)
 
 	def _create_neg_samples(self):
 
@@ -107,10 +103,8 @@ class Corpus:
 		freq = np.power(freq / np.sum(freq), 0.75) # unigrams ^ 3/4
 		dist = freq * (1 / np.sum(freq)) #normalize probabs
 
-		self._neg_samples = np.zeros((len(self._windows), self._samples + self._cw), dtype=np.int32)
-
-		for example in range(len(self._neg_samples)):
-			self._neg_samples[example] = np.random.choice(idx, (self._samples + self._cw), p=dist)
+		for src, obj in self._data_sources.iteritems():
+			obj._create_neg_samples(self._samples, self._cw, idx, dist)
 
 
 	def _create_ent_maps(self):
@@ -121,14 +115,7 @@ class Corpus:
 		p_ents = []
 
 		for src, obj in self._data_sources.iteritems():
-
-			curr = obj.set_p_entities(len(self._data_sources))
-			ents += curr[0]
-			p_ents += curr[1]
-
-		self._ents = np.array(ents, dtype=np.int32)
-		self._p_ents = np.array(p_ents, dtype=np.int32)
-
+			obj.set_p_entities(len(self._data_sources))
 
 
 	def _save(self):
@@ -141,8 +128,8 @@ class Corpus:
 		with open('vocab.pkl', 'wb') as f:
 			cPickle.dump(self._freq, f, protocol=cPickle.HIGHEST_PROTOCOL)
 
-	def get_data(self):
-		return self._tokens, self._windows, self._neg_samples,  self._ents, self._p_ents
+	def get_sources(self):
+		return self._data_sources
 
 	def get_vocab(self):
 		return self._freq.keys()

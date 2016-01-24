@@ -29,7 +29,7 @@ class TheanoModel:
 		p = self._out_vecs[e_idx]
 		p_prime = self._out_vecs[parallel_e_idx]
 
-		reg_term = -T.sqr(p - T.mean(p_prime))
+		reg_term = T.sqr(p - T.mean(p_prime))
 
 
 		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
@@ -38,11 +38,11 @@ class TheanoModel:
 
 		cost = T.sum(ctx_term + neg_term) + self._reg * T.sum(reg_term)
 
-		grad_central, grad_context, grad_p = T.grad(cost,[t,j, p])
+		grad_central, grad_context = T.grad(cost,[t,j])
 
 		updates = ( (self._in_vecs,  T.inc_subtensor(t, (self._alpha * grad_central)) ), \
-					(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context)) ),
-					(self._out_vecs, T.inc_subtensor(p, (self._alpha * grad_p)))      )
+					(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context)) ))
+					# (self._out_vecs, T.inc_subtensor(p, (self._alpha * grad_p)))      )
 
 		return cost, updates
 
@@ -70,9 +70,8 @@ class TheanoModel:
 		theano.config.linker = 'cvm_nogc'
 		theano.config.allow_gc = False
 
-	def train(self, data):
+	def train(self, sources):
 
-		self._tokens, self._windows, self._neg_samples, self._ents, self._p_ents = data
 
 
 		self._logger.info('started training model')
@@ -84,9 +83,13 @@ class TheanoModel:
 
 			self._logger.info('starting epoch: ' + str(epoch))
 
-			cost = self._f(self._tokens, self._windows, self._neg_samples,self._ents, self._p_ents)
+			cost = 0
+			for src in sources:
 
-			self._shuffle_data()
+				tokens, windows, neg_samples, ents, p_ents = src.get_data()
+				cost += self._f(tokens, windows, neg_samples, ents, p_ents)
+
+			src.shuffle_data()
 
 			self._logger.info('cost: ' + str(cost))
 
@@ -97,14 +100,6 @@ class TheanoModel:
 		self._logger.info('done training model')
 
 
-	def _shuffle_data(self):
-
-		data = np.hstack((self._windows, self._neg_samples))
-		data = np.column_stack((self._tokens, data))
-
-		np.random.shuffle(data)
-		self._tokens, self._windows, self._neg_samples = np.split(data, [1, self._windows.shape[1] + 1], axis=1)
-		self._tokens = np.asarray(self._tokens).reshape(-1)
 
 
 	def _save_model(self, step):
