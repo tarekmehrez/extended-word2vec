@@ -106,7 +106,7 @@ class ArgParser:
 				self._logger.info("the model you are trying to visualize does not exist")
 				self._help_exit()
 
-			return('plot', results.model)
+			return('plot', results.model, results.run)
 
 
 

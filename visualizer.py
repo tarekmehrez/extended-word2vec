@@ -13,7 +13,7 @@ class Visualizer:
 	def __init__(self,logger, args):
 
 		self._logger = logger
-		model_path = args[0]
+		model_path, self._run = args
 
 		self._logger.info('reading model')
 
@@ -36,6 +36,7 @@ class Visualizer:
 
 
 		self._pca()
+		self._distances()
 		self._vis()
 
 
@@ -67,6 +68,38 @@ class Visualizer:
 			plt.annotate(label, xy = (x, y))
 
 		plt.show()
+
+	def _distances(self):
+
+		entities = dict()
+
+		for idx,i in enumerate(self._vocab):
+			if i[0].isupper():
+				entities[idx] = i
+
+		distances = np.zeros((len(entities),len(entities)))
+
+		red = self._reduced[entities.keys()]
+		for idx,val in entities.iteritems():
+			curr = self._reduced[idx]
+			distances[idx] = np.sqrt(np.sum(np.power((curr - red),2),axis=1))
+
+		file = 'distances.' + str(self._run) + '.txt'
+		f = open(file,'w')
+		f.write('\t')
+		for i in entities:
+			f.write(self._vocab[i][0:2] + self._vocab[i][-2:]+ '\t')
+		f.write('\n')
+		for i,row in enumerate(distances):
+			f.write(self._vocab[i][0:2] + self._vocab[i][-2:] + '\t')
+
+			for j,item in enumerate(row):
+				if entities[i].split('_')[0] == entities[j].split('_')[0]:
+					f.write(str("%.2f" % distances[i,j])+ "\t")
+				else:
+					f.write('\t')
+			f.write('\n')
+		f.close()
 
 	def _load_model(self, path):
 

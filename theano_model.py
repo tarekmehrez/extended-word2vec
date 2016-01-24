@@ -90,8 +90,8 @@ class TheanoModel:
 
 			self._logger.info('cost: ' + str(cost))
 
-			if epoch in range(steps,self._epochs,steps):
-				self._save_model(epoch)
+			# if epoch in range(steps,self._epochs,steps):
+			self._save_model(epoch)
 
 		self._save_model('final')
 		self._logger.info('done training model')
