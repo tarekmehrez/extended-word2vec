@@ -38,11 +38,11 @@ class TheanoModel:
 
 		cost = T.sum(ctx_term + neg_term) + self._reg * T.sum(reg_term)
 
-		grad_central, grad_context = T.grad(cost,[t,j])
+		grad_central, grad_context, grad_p = T.grad(cost,[t,j, p])
 
 		updates = ( (self._in_vecs,  T.inc_subtensor(t, (self._alpha * grad_central)) ), \
-					(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context)) ) )
-					# (self._out_vecs, T.inc_subtensor(p, (self._alpha * grad_p)))      )
+					(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context)) ),
+					(self._out_vecs, T.inc_subtensor(p, (self._alpha * grad_p)))      )
 
 		return cost, updates
 
