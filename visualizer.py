@@ -13,25 +13,25 @@ class Visualizer:
 	def __init__(self,logger, args):
 
 		self._logger = logger
-		model_path, self._run = args
+		self._model_path, self._run = args
 
 		self._logger.info('reading model')
 
-		if 'gensim' in model_path:
+		if 'gensim' in self._model_path:
 			model = gensim.models.Word2Vec()
-			self._model = model.load(model_path)
+			self._model = model.load(self._model_path)
 			self._vocab = self._model.vocab
 
 			self._src = 'gensim'
 
-		elif 'mikolov' in model_path:
-			self._model = gensim.models.Word2Vec.load_word2vec_format(model_path, binary=False)  # C text format
+		elif 'mikolov' in self._model_path:
+			self._model = gensim.models.Word2Vec.load_word2vec_format(self._model_path, binary=False)  # C text format
 			self._vocab = self._model.vocab
 
 			self._src = 'gensim'
 
 		else:
-			self._model = self._load_model(model_path)
+			self._model = self._load_model(self._model_path)
 			self._src = 'theano'
 
 
@@ -65,9 +65,13 @@ class Visualizer:
 
 		for label, x, y in zip(self._vocab, self._reduced[:, 0], self._reduced[:, 1]):
 			plt.plot(x,y,'x')
-			plt.annotate(label, xy = (x, y))
+			plt.annotate(label, xy = (x, y),fontsize='xx-small')
 
-		plt.show()
+		file = 'fig-' + self._model_path.split('/')[-1] + '.eps'
+		plt.savefig(file, format='eps', dpi=1200)
+
+		# plt.show()
+
 
 	def _distances(self):
 
@@ -83,6 +87,8 @@ class Visualizer:
 		for idx,val in entities.iteritems():
 			curr = self._reduced[idx]
 			distances[idx] = np.sqrt(np.sum(np.power((curr - red),2),axis=1))
+
+
 
 		file = 'distances.' + str(self._run) + '.txt'
 		f = open(file,'w')
