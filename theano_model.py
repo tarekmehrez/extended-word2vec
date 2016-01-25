@@ -43,11 +43,10 @@ class TheanoModel:
 
 		cost = T.sum(ctx_term + neg_term) + self._reg * T.sum(reg_term)
 
-		grad_central, grad_context, grad_p = T.grad(cost,[t,j, p])
+		grad_central, grad_context = T.grad(cost,[t,j])
 
 		updates = ( (self._in_vecs,  T.inc_subtensor(t, (self._alpha * grad_central)) ), \
-					(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context)) ),
-					(self._out_vecs, T.inc_subtensor(p, (self._alpha * grad_p)))      )
+					(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context)) ) )
 
 		return cost, updates
 
@@ -78,8 +77,6 @@ class TheanoModel:
 	def train(self, sources):
 
 
-
-
 		self._logger.info('started training model')
 		steps = self._epochs / 5
 
@@ -94,9 +91,11 @@ class TheanoModel:
 
 				tokens, windows, neg_samples, ents, p_ents = src.get_data()
 
+
 				cost += self._f(tokens, windows, neg_samples, ents, p_ents)
 
-			src.shuffle_data()
+				src.shuffle_data()
+
 
 			self._logger.info('cost: ' + str(cost))
 

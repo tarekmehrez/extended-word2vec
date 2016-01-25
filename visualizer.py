@@ -118,7 +118,7 @@ class Visualizer:
 	def _load_model(self, path):
 
 		with open(path, 'r') as f:
-			self._model = cPickle.load(f)
+			self._model = cPickle.load(f)[0]
 
 		with open('vocab.pkl', 'r') as f:
 			self._vocab = cPickle.load(f)
