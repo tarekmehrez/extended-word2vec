@@ -24,12 +24,6 @@ class Visualizer:
 
 			self._src = 'gensim'
 
-		elif 'mikolov' in self._model_path:
-			self._model = gensim.models.Word2Vec.load_word2vec_format(self._model_path, binary=False)  # C text format
-			self._vocab = self._model.vocab
-
-			self._src = 'gensim'
-
 		else:
 			self._model = self._load_model(self._model_path)
 			self._src = 'theano'
@@ -39,7 +33,7 @@ class Visualizer:
 
 		self._vis()
 
-		if self._mode == 'save':
+		if self._mode == 'save' and self._src == 'theano':
 			self._distances()
 
 
@@ -108,10 +102,7 @@ class Visualizer:
 			f.write(self._vocab[i][0:2] + self._vocab[i][-2:] + '\t')
 
 			for j,item in enumerate(row):
-				if entities[i].split('_')[0] == entities[j].split('_')[0]:
-					f.write(str("%.2f" % distances[i,j])+ "\t")
-				else:
-					f.write('\t')
+				f.write(str("%.2f" % distances[i,j])+ "\t")
 			f.write('\n')
 		f.close()
 
