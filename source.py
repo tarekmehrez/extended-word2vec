@@ -49,6 +49,8 @@ class Source:
 			self._tokens += idx
 			self._windows += self._context_win(idx,cw)
 
+		self._tokens = np.array(self._tokens, dtype=np.int32)
+		self._windows = np.array(self._windows, dtype=np.int32)
 
 	def _read_file(self, in_file):
 
@@ -82,10 +84,10 @@ class Source:
 
 	def _create_neg_samples(self, samples, cw, idx, dist):
 
-		self._neg_samples = np.zeros((len(self._windows), samples + cw), dtype=np.int32)
+		self._neg_samples = np.zeros((len(self._windows), samples), dtype=np.int32)
 
 		for example in range(len(self._neg_samples)):
-			self._neg_samples[example] = np.random.choice(idx, (samples + cw), p=dist)
+			self._neg_samples[example] = np.random.choice(idx, samples, p=dist)
 
 	def set_p_entities(self, total_sources):
 		self._e_prime = []
@@ -95,6 +97,9 @@ class Source:
 			curr += [-1] * (total_sources - len(curr))
 			self._e_prime.append(curr)
 
+
+		self._my_entities = np.array(self._my_entities.keys(), dtype=np.int32)
+		self._e_prime = np.array(self._e_prime, dtype=np.int32)
 
 	def add_file(self,file_path):
 		self._files.append(file_path)

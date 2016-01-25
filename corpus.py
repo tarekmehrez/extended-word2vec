@@ -93,6 +93,7 @@ class Corpus:
 			obj.ctx_wid(vocab,self._cw)
 
 
+
 	def _create_neg_samples(self):
 
 		self._logger.info('creating neg samples')

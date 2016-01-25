@@ -11,11 +11,16 @@ class TheanoModel:
 
 		self._logger.info('initializing theano model')
 		self._opt_speed()
-		dim, self._epochs, self._batch_size, self._alpha, self._reg, self._run = args[1:]
+		dim, self._epochs, self._batch_size, self._alpha, self._reg, self._run, model_path = args[1:]
 
-		self._in_vecs = theano.shared(np.random.uniform( -2.0, 2.0, (len(vocab),dim)).astype(theano.config.floatX))
-		self._out_vecs = theano.shared(np.random.uniform(-2.0, 2.0, (len(vocab),dim)).astype(theano.config.floatX))
+		self._vocab = vocab
 
+		if model_path == None:
+
+			self._in_vecs = theano.shared(np.random.uniform( -2.0, 2.0, (len(vocab),dim)).astype(theano.config.floatX))
+			self._out_vecs = theano.shared(np.random.uniform(-2.0, 2.0, (len(vocab),dim)).astype(theano.config.floatX))
+		else:
+			self._load_model(model_path)
 
 
 	def _cost(self,cen_idx,ctx_idx, neg_idx,e_idx, parallel_e_idx):
@@ -29,7 +34,7 @@ class TheanoModel:
 		p = self._out_vecs[e_idx]
 		p_prime = self._out_vecs[parallel_e_idx]
 
-		reg_term = T.sqr(p - T.mean(p_prime))
+		reg_term = -T.sqr(p - T.mean(p_prime))
 
 
 		ctx_term = 	T.log(T.nnet.sigmoid(T.dot(t, j.T)))
@@ -38,11 +43,11 @@ class TheanoModel:
 
 		cost = T.sum(ctx_term + neg_term) + self._reg * T.sum(reg_term)
 
-		grad_central, grad_context = T.grad(cost,[t,j])
+		grad_central, grad_context, grad_p = T.grad(cost,[t,j, p])
 
 		updates = ( (self._in_vecs,  T.inc_subtensor(t, (self._alpha * grad_central)) ), \
-					(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context)) ))
-					# (self._out_vecs, T.inc_subtensor(p, (self._alpha * grad_p)))      )
+					(self._out_vecs, T.inc_subtensor(j, (self._alpha * grad_context)) ),
+					(self._out_vecs, T.inc_subtensor(p, (self._alpha * grad_p)))      )
 
 		return cost, updates
 
@@ -74,6 +79,7 @@ class TheanoModel:
 
 
 
+
 		self._logger.info('started training model')
 		steps = self._epochs / 5
 
@@ -84,9 +90,10 @@ class TheanoModel:
 			self._logger.info('starting epoch: ' + str(epoch))
 
 			cost = 0
-			for src in sources:
+			for src_name, src in sources.iteritems():
 
 				tokens, windows, neg_samples, ents, p_ents = src.get_data()
+
 				cost += self._f(tokens, windows, neg_samples, ents, p_ents)
 
 			src.shuffle_data()
@@ -99,8 +106,12 @@ class TheanoModel:
 		self._save_model('final')
 		self._logger.info('done training model')
 
+	def _load_model(self, path):
 
+		self._logger.info("continue training on model: " +  self._mo)
 
+		with open(path, 'wb') as f:
+			self._out_vecs, self._in_vecs = cPickle.load(f)
 
 	def _save_model(self, step):
 
@@ -112,4 +123,4 @@ class TheanoModel:
 		self._logger.info("writing model to " + str(file) )
 
 		with open(file, 'wb') as f:
-			cPickle.dump(self._out_vecs, f)
+			cPickle.dump([self._out_vecs, self._in_vecs], f)

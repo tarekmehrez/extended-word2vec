@@ -13,7 +13,7 @@ class Visualizer:
 	def __init__(self,logger, args):
 
 		self._logger = logger
-		self._model_path, self._run = args
+		self._mode ,self._model_path, self._run = args
 
 		self._logger.info('reading model')
 
@@ -36,8 +36,11 @@ class Visualizer:
 
 
 		self._pca()
-		self._distances()
+
 		self._vis()
+
+		if self._mode == 'save':
+			self._distances()
 
 
 
@@ -65,12 +68,17 @@ class Visualizer:
 
 		for label, x, y in zip(self._vocab, self._reduced[:, 0], self._reduced[:, 1]):
 			plt.plot(x,y,'x')
-			plt.annotate(label, xy = (x, y),fontsize='xx-small')
 
-		file = 'fig-' + self._model_path.split('/')[-1] + '.eps'
-		plt.savefig(file, format='eps', dpi=1200)
+			if self._mode == 'save':
+				plt.annotate(label, xy = (x, y),fontsize='xx-small')
+			else:
+				plt.annotate(label, xy = (x, y))
 
-		# plt.show()
+		if self._mode == 'save':
+			file = 'fig-' + self._model_path.split('/')[-1] + '.eps'
+			plt.savefig(file, format='eps', dpi=1200)
+		else:
+			plt.show()
 
 
 	def _distances(self):

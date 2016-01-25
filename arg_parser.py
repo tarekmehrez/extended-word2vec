@@ -94,7 +94,7 @@ class ArgParser:
 				self._logger.info("you can only using gensim or theano")
 				self._help_exit()
 
-			return ('train', results.train, results.dim, results.iter, results.batch, results.alpha, results.reg, results.run)
+			return ('train', results.train, results.dim, results.iter, results.batch, results.alpha, results.reg, results.run, results.model)
 
 		if results.plot:
 			if results.corpus or results.train:
@@ -106,7 +106,11 @@ class ArgParser:
 				self._logger.info("the model you are trying to visualize does not exist")
 				self._help_exit()
 
-			return('plot', results.model, results.run)
+			if not (results.plot == 'show' or results.plot == 'save'):
+				self._logger.info("you can only show or save figures. Save calculates euclidean distances as well")
+				self._help_exit()
+
+			return('plot', results.plot, results.model, results.run)
 
 
 
