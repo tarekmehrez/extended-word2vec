@@ -25,7 +25,7 @@ class ArgParser:
 		self._parser.add_argument(	'-t','--train', action='store', dest='train',
 									help='MODE: train vector space (after reading in data)')
 
-		self._parser.add_argument(	'-p','--plot', action='store_true', dest='plot',
+		self._parser.add_argument(	'-p','--plot', action='store', dest='plot',
 									help='MODE: visualize vector space')
 
 		# options for extracting feats

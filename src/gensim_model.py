@@ -1,4 +1,5 @@
 import gensim
+import sys
 
 import numpy as np
 
@@ -21,18 +22,16 @@ class GensimModel:
 
 		tokens = tokens.astype(str)
 
-		print tokens.dtype
-
 		for idx, word in enumerate(vocab):
-			tokens[tokens == idx] = word
+			tokens[tokens == str(idx)] = word
 
 		self.tokens = tokens
+
 
 	def train(self):
 		self._logger.info('starting training vectors with gensim')
 
 		tokens = self.tokens
-
 		sentences = []
 		offset = 10
 		curr = []

@@ -7,9 +7,6 @@ from collections import OrderedDict
 from scipy import stats
 
 
-from entity import Entity
-from source import Source
-
 # reads in corpus, must have files, sources.csv and entities.txt
 
 class Features:
