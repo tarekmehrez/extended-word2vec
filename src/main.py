@@ -1,7 +1,7 @@
 import sys, logging
 
 from arg_parser import ArgParser
-from corpus import Corpus
+from features import Features
 from vector_space import VectorSpace
 from visualizer import Visualizer
 
@@ -18,7 +18,9 @@ args = parser.parse(sys.argv)
 print args
 if args[0] == 'train':
 	VectorSpace(logger,args[1:])
-elif args[0] == 'corpus':
-	Corpus(logger,args[1:])
+
+elif args[0] == 'extract-feats':
+	Features(logger,args[1:])
+
 else:
 	Visualizer(logger, args[1:])

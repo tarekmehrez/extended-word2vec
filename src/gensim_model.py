@@ -4,19 +4,34 @@ import numpy as np
 
 class GensimModel:
 
-	def __init__(self,logger, corpus):
+	def __init__(self,logger, features):
 		self._logger = logger
-
+		self._features = features
 		self._logger.info('initializing theano model')
-		self._corpus = corpus
 
+		self._get_token_strings()
+
+
+
+
+	def _get_token_strings(self):
+
+		vocab = self._features.freq.keys()
+		tokens = self._features.input_tokens
+
+		tokens = tokens.astype(str)
+
+		print tokens.dtype
+
+		for idx, word in enumerate(vocab):
+			tokens[tokens == idx] = word
+
+		self.tokens = tokens
 
 	def train(self):
 		self._logger.info('starting training vectors with gensim')
 
-		tokens = []
-		for csv_row in self._corpus.get_source_files():
-			tokens += self._corpus._read_file(csv_row)
+		tokens = self.tokens
 
 		sentences = []
 		offset = 10
@@ -42,6 +57,6 @@ class GensimModel:
 
 	def _save_model(self):
 
-		file = 'gensim.model'
+		file = 'models/gensim.model'
 		self._logger.info('writing gensim model to ' + str(file))
 		self._model.save(file)

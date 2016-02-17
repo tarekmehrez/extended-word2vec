@@ -11,7 +11,7 @@ class TheanoModel:
 
 		self._logger.info('initializing theano model')
 		self._opt_speed()
-		dim, self._epochs, self._batch_size, self._alpha, self._reg, self._run, model_path = args[1:]
+		dim, self._epochs, self._alpha, self._reg, self._run, model_path = args[1:]
 
 		self._vocab = vocab
 
