@@ -27,9 +27,10 @@ class MyWord2Vec:
 		self._logger.info('Reading args...')
 
 		self._args = args
+		self._lr  = self._args.lr
 		self.data_index = 0
 
-		self._build_vocab()
+		self._buildvocab()
 		self._build_dataset()
 		self._sample_dist()
 
@@ -40,25 +41,25 @@ class MyWord2Vec:
 		self.data_index = 0
 		return self._context_tensor_size
 
-	def _build_vocab(self):
+	def _buildvocab(self):
 		self._logger.info('Reading in data, creating vocab ...')
 		with open(self._args.data, 'rb') as f:
 			self._words = f.read().split(' ')
 
-		self._vocab = list(set(self._words))
-		self._vocab.append('UNK')
-		self._vocab_size = len(self._vocab)
+		self.vocab = list(set(self._words))
+		self.vocab.append('UNK')
+		self.vocab_size = len(self.vocab)
 
 		self._logger.info('Number of tokens: %d' % len(self._words))
-		self._logger.info('Vocab Size: %d' % len(self._vocab))
+		self._logger.info('Vocab Size: %d' % len(self.vocab))
 
 	def _build_dataset(self):
 		self._logger.info('Building data set ...')
 
 		data = np.array(self._words)
-		vocab = self._vocab
+		vocab = self.vocab
 
-		for idx, word in enumerate(self._vocab):
+		for idx, word in enumerate(self.vocab):
 			data[data == word]= idx
 
 		data = data.astype(int)
@@ -91,7 +92,7 @@ class MyWord2Vec:
 		del(self._unigrams)
 
 	def _get_samples(self, size):
-		samples = np.random.choice(range(self._vocab_size), size, p=self._dist)
+		samples = np.random.choice(range(self.vocab_size), size, p=self._dist)
 		return samples
 
 	def plot(self, title):
@@ -99,8 +100,8 @@ class MyWord2Vec:
 		low_dim_embs = tsne.fit_transform(self.out_embeddings.eval())
 
 
-		labels = [obj._reverse_dictionary[key] for key in xrange(obj._vocab_size)]
-		for label, x, y in zip(obj._vocab, low_dim_embs[:, 0], low_dim_embs[:, 1]):
+		labels = [obj._reverse_dictionary[key] for key in xrange(obj.vocab_size)]
+		for label, x, y in zip(obj.vocab, low_dim_embs[:, 0], low_dim_embs[:, 1]):
 			plt.plot(x,y,'x')
 			plt.annotate(label, xy = (x, y),fontsize='xx-small')
 
@@ -116,16 +117,16 @@ class MyWord2Vec:
 
 		with self.graph.as_default():
 
+			init_width = 0.5 / self._args.emb_size
 
 			# Shared variables holding input and output embeddings
 			self.inp_embeddings = tf.Variable(	tf.random_uniform(
-												[self._vocab_size, self._args.emb_size],
-												 -1.0, 1.0))
+												[self.vocab_size, self._args.emb_size],
+												-init_width, init_width))
 
 			self.out_embeddings = tf.Variable(	tf.random_uniform(
-												[self._vocab_size, self._args.emb_size],
-												-1.0, 1.0))
-
+												[self.vocab_size, self._args.emb_size],
+												-init_width, init_width))
 
 			# place holders, for batch inputs
 			self.inp_ctx = tf.placeholder(	tf.int32,
@@ -158,8 +159,15 @@ class MyWord2Vec:
 
 
 			self.loss = (tf.reduce_sum(ctx_expr) + tf.reduce_sum(neg_expr))
-			self.train = tf.train.GradientDescentOptimizer(self._args.lr).minimize(-self.loss)
 
+			optimizer = tf.train.GradientDescentOptimizer(self._lr)
+			self.train = optimizer.minimize(-self.loss,
+											gate_gradients=optimizer.GATE_NONE)
+
+	def lr_decay(self):
+		decay_factor =  10.0 * (5.0 / float(self._args.epochs))
+		lr = np.maximum(0.0001, self._lr / decay_factor)
+		self._lr = round(lr,4)
 
 	def generate_batch(self):
 
@@ -168,7 +176,7 @@ class MyWord2Vec:
 
 		# get current batch, curr_index: curr_index + batch_size
 		current_data_batch = self._data[ self.data_index : self.data_index + self._args.batch_size ]
-		self.data_index += (self._args.batch_size % len(self._data))
+		self.data_index += (self._args.batch_size % self.data_size)
 
 		# add extra UNKs for padding context windows
 		padding_index = self._dictionary['UNK']
@@ -213,14 +221,14 @@ parser.add_argument('-n','--neg_samples',
 					dest='samples',
 					help='Negative Samples',
 					type=int,
-					default=5)
+					default=10)
 
 parser.add_argument('-lr','--learning_rate',
 					action='store',
 					dest='lr',
 					help='Learning Rate',
-					type=int,
-					default=0.1)
+					type=float,
+					default=1.0)
 
 parser.add_argument('-b','--batch_size',
 					action='store',
@@ -228,6 +236,13 @@ parser.add_argument('-b','--batch_size',
 					help='Batch Size',
 					type=int,
 					default=50)
+
+parser.add_argument('-epochs','--epochs',
+					action='store',
+					dest='epochs',
+					help='number of epochs',
+					type=int,
+					default=7)
 
 parser.add_argument('-o','--output',
 					action='store',
@@ -242,27 +257,32 @@ if not args.data:
 	parser.print_help()
 	sys.exit()
 
+print args
+
 obj = MyWord2Vec(args)
 single_batch = obj.set_batch_size()
+
 obj.build_graph()
 
-batch_iter = len(obj._data) // single_batch
-check_point = batch_iter / 5
-epochs = 5
+batch_iter = obj.data_size // single_batch
+check_point = batch_iter / 4
+epochs = args.epochs
 
-if os.path.exists(obj._args.output):
-	with open(obj._args.output, 'rb') as f:
+if os.path.exists(args.output):
+	with open(args.output, 'rb') as f:
 		final_embeddings = cPickle.load(f)
 else:
-	print 'starting training for %d epochs, each with %d number of batches' % (epochs, batch_iter)
+	print '[*] Starting training for %d epochs, each with %d number of batches' % (epochs, batch_iter)
 
 	with tf.Session(graph=obj.graph) as sess:
 		tf.initialize_all_variables().run()
 
+		first_start = time.time()
+
 		avg = 0
-		for epoch in xrange(epochs):
+		for epoch in xrange(1, epochs+1):
 			start = time.time()
-			print 'training, epoch num: %d, out of %d' % (epoch, epochs)
+			print '[*] training, epoch num: %d, out of %d with learning rate: %f' % (epoch, epochs, obj._lr)
 			for batch in xrange(batch_iter):
 
 				context_tuples, sampled_tuples = obj.generate_batch()
@@ -275,30 +295,38 @@ else:
 								obj.inp_neg: inp_neg,
 								obj.out_neg: out_neg,	}
 
-				result, _ = sess.run([obj.loss, obj.train], feed_dict=feed_dict)
-				# print 'batch no %s out of %s, avg cost = %s' % (batch, batch_iter, result)
-				# if batch % check_point == 0 and batch != 0:
-				# 	print 'batch no %s out of %s, avg cost = %s' % (batch, batch_iter, avg/batch)
-				# 	print 'epcoh time so far: %ds' % int(time.time()-start)
+				try:
+					result, _ = sess.run([obj.loss, obj.train], feed_dict=feed_dict)
+				except:
+					print '[*] encountered an error, ignoring'
+					pass
 
-			print 'Done epoch %d ' % epoch
-			print 'time taken: %ds' %  int(time.time()-start)
+				avg += result
+
+				if batch % check_point == 0 and batch != 0:
+					print '\t[*][*] batch %s out of %s, avg cost=%s, time so far: %ds' % (batch, batch_iter, avg/batch,int(time.time()-start))
 
 			avg /= batch_iter
-			print 'epoch no %s out of %s, avg cost = %s' % (epoch, epochs, avg)
-			avg = 0
 
+			print '[*] Done epoch %s out of %s, avg cost=%s, time taken: %ds ' % ( epoch,epochs,avg, int(time.time()-start))
+			avg = 0
+			obj.lr_decay()
+			print '_______________________\n'
+
+		print '[*] Total training time: %ds' % int(time.time()-first_start)
 		final_embeddings = obj.out_embeddings.eval()
 
-with open(obj._args.output, 'wb') as f:
+with open(args.output, 'wb') as f:
 	cPickle.dump(final_embeddings, f, protocol=cPickle.HIGHEST_PROTOCOL)
 
 pca = PCA(n_components=2)
 pca.fit(final_embeddings)
 low_dim_embs = pca.transform(final_embeddings)
 
-labels = [obj._reverse_dictionary[key] for key in xrange(obj._vocab_size)]
-for label, x, y in zip(obj._vocab, low_dim_embs[:, 0], low_dim_embs[:, 1]):
+obj.vocab.remove('UNK')
+
+labels = [obj._reverse_dictionary[key] for key in xrange(obj.vocab_size-1)]
+for label, x, y in zip(obj.vocab, low_dim_embs[:, 0], low_dim_embs[:, 1]):
 	plt.plot(x,y,'x')
 	plt.annotate(label, xy = (x, y))
 
