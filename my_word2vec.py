@@ -30,7 +30,7 @@ class MyWord2Vec:
 		self._lr  = self._args.lr
 		self.data_index = 0
 
-		self._buildvocab()
+		self._build_vocab()
 		self._build_dataset()
 		self._sample_dist()
 
@@ -41,50 +41,6 @@ class MyWord2Vec:
 		self.data_index = 0
 		return self._context_tensor_size
 
-	def _buildvocab(self):
-		self._logger.info('Reading in data, creating vocab ...')
-		with open(self._args.data, 'rb') as f:
-			self._words = f.read().split(' ')
-
-		self.vocab = list(set(self._words))
-		self.vocab.append('UNK')
-		self.vocab_size = len(self.vocab)
-
-		self._logger.info('Number of tokens: %d' % len(self._words))
-		self._logger.info('Vocab Size: %d' % len(self.vocab))
-
-	def _build_dataset(self):
-		self._logger.info('Building data set ...')
-
-		data = np.array(self._words)
-		vocab = self.vocab
-
-		for idx, word in enumerate(self.vocab):
-			data[data == word]= idx
-
-		data = data.astype(int)
-		dictionary= dict(zip(vocab, range(len(vocab))))
-		reverse_dictionary = dict(zip(dictionary.values(), dictionary.keys()))
-		count = dict(collections.Counter(self._words))
-		count['UNK']=1
-
-		unigrams_dict = dict()
-		for word, value in count.iteritems():
-			idx = dictionary[word]
-			unigrams_dict[idx] = value
-
-		unigrams = collections.OrderedDict(unigrams_dict)
-		unigrams = np.array(unigrams.values(),dtype=float)
-
-		self._unigrams = unigrams.tolist()
-
-		self._data = data.tolist()
-		self.data_size = len(self._data)
-		self._dictionary = dictionary
-		self._reverse_dictionary = reverse_dictionary
-		self._count = count
-
-		del(self._words)
 
 	def _sample_dist(self):
 		freq = np.power(self._unigrams / np.sum(self._unigrams), 0.75) # unigrams ^ 3/4
@@ -242,7 +198,15 @@ parser.add_argument('-epochs','--epochs',
 					dest='epochs',
 					help='number of epochs',
 					type=int,
-					default=7)
+					default=5)
+
+parser.add_argument('-r','--reg',
+					action='store',
+					dest='regularizer',
+					help='Regularization Parameter',
+					type=float,
+					default=0.1)
+
 
 parser.add_argument('-o','--output',
 					action='store',
