@@ -48,7 +48,6 @@ class MyWord2Vec:
 		self._arts_srcs,
 		self._srcs_ents,
 		self._ents_srcs) = self._reader.read_meta_files(self._args.data)
-		# self._ents_srcents)
 
 		self._number_of_srcs = len(set(self._srcs_ents.keys()))
 

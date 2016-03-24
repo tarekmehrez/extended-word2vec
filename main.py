@@ -11,6 +11,7 @@ parser.add_argument('-data','--input_data',
 					dest='data',
 					help='Input Data')
 
+
 parser.add_argument('-emb','--emb-size',
 					action='store',
 					dest='emb_size',

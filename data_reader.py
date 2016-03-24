@@ -68,11 +68,6 @@ class DataReader:
 
 		self._logger.info('Number of source-specific entities: %d' % total_ents)
 
-		# entity ~> names of all corresponding source-specific entities
-		# with open('%s/meta/ents_pairs.csv' % data_dir) as f:
-		# 	ents_pairs = np.array([line.strip().decode('utf-8').split(',') for line in f])
-		# ents_srcents = dict(zip(ents_pairs[:,0],ents_pairs[:,1:]))
-
 		return (vocab,
 				vocab_size,
 				dictionary,
@@ -80,8 +75,7 @@ class DataReader:
 				unigrams,
 				arts_srcs,
 				srcs_ents,
-				ents_srcs,)
-				# ents_srcents)
+				ents_srcs)
 
 
 	def read_file(self, file, dictionary):
