@@ -58,7 +58,7 @@ parser.add_argument('-r','--reg',
 					dest='regularizer',
 					help='Regularization Parameter',
 					type=float,
-					default=0.1)
+					default=1.0)
 
 parser.add_argument('-o','--output',
 					action='store',

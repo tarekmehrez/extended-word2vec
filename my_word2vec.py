@@ -28,7 +28,10 @@ class MyWord2Vec:
 
 		self._args = args
 		self._lr  = self._args.lr
-		self.data_index = 0
+		self._data_index = 0
+
+		self._context_tensor_size = 0
+		self._sampled_tensor_size = 0
 
 
 	def read_data(self):
@@ -44,8 +47,10 @@ class MyWord2Vec:
 		self._unigrams,
 		self._arts_srcs,
 		self._srcs_ents,
-		self._ents_srcs,
-		self._ents_srcents) = self._reader.read_meta_files(self._args.data)
+		self._ents_srcs) = self._reader.read_meta_files(self._args.data)
+		# self._ents_srcents)
+
+		self._number_of_srcs = len(set(self._srcs_ents.keys()))
 
 		self._sample_dist()
 
@@ -57,14 +62,6 @@ class MyWord2Vec:
 	def _save_model(self, file_path, embeddings):
 		with open(file_path, 'wb') as f:
 			cPickle.dump(embeddings, f, protocol=cPickle.HIGHEST_PROTOCOL)
-
-	def _set_batch_size(self):
-		ctx, neg = self.generate_batch()
-		self._context_tensor_size = len(ctx)
-		self._sampled_tensor_size = len(neg)
-		self.data_index = 0
-		return self._context_tensor_size
-
 
 	def _sample_dist(self):
 		freq = np.power(self._unigrams / np.sum(self._unigrams), 0.75) # unigrams ^ 3/4
@@ -128,19 +125,20 @@ class MyWord2Vec:
 
 	def build_expr(self):
 
-		# place holders, for batch inputs
-		self.inp_ctx = tf.placeholder(	tf.int32,
-										shape=(self._context_tensor_size))
+		self.inp_ctx = tf.placeholder(tf.int32,shape=(None))
+		self.out_ctx = tf.placeholder(tf.int32,shape=(None))
 
-		self.out_ctx = tf.placeholder(	tf.int32,
-										shape=(self._context_tensor_size))
+		self.inp_neg = tf.placeholder(tf.int32,shape=(None))
+		self.out_neg = tf.placeholder(tf.int32,shape=(None))
 
-		self.inp_neg = tf.placeholder(	tf.int32,
-										shape=(self._sampled_tensor_size))
+		self.out_ents = tf.placeholder(tf.int32,shape=(None))
+		self.other_ents = tf.placeholder(tf.int32,shape=(None))
 
-		self.out_neg = tf.placeholder(	tf.int32,
-										shape=(self._sampled_tensor_size))
+		ctx_batch_size = tf.shape(self.inp_ctx)[0]
+		neg_batch_size = tf.shape(self.out_ctx)[0]
+		ents_constant = tf.shape(self.out_ents)[0]
 
+		src_constnt = tf.constant(self._number_of_srcs,dtype=tf.float32)
 
 		# embedding lookups to get vectors of specified indices (by placeholders)
 		embed_inp_ctx = tf.nn.embedding_lookup(self.inp_embeddings, self.inp_ctx)
@@ -149,16 +147,24 @@ class MyWord2Vec:
 		embed_inp_neg = tf.nn.embedding_lookup(self.inp_embeddings, self.inp_neg)
 		embed_out_neg = tf.nn.embedding_lookup(self.out_embeddings, self.out_neg)
 
+		embed_entities = tf.nn.embedding_lookup(self.out_embeddings, self.out_ents)
+		embed_other_entities = tf.nn.embedding_lookup(self.out_embeddings, self.other_ents)
+
 		dot_ctx = tf.mul(embed_inp_ctx, embed_out_ctx)
 		sum_ctx = tf.reduce_sum(dot_ctx, 1)
-		ctx_expr = tf.log(tf.sigmoid(sum_ctx)) / self._context_tensor_size
+		ctx_expr = tf.log(tf.sigmoid(sum_ctx)) / tf.cast(ctx_batch_size, tf.float32)
 
 		dot_neg = tf.mul(embed_inp_neg, embed_out_neg)
 		sum_neg = tf.reduce_sum(dot_neg, 1)
-		neg_expr = tf.log(tf.sigmoid(-sum_neg)) / self._sampled_tensor_size
+		neg_expr = tf.log(tf.sigmoid(-sum_neg)) / tf.cast(neg_batch_size, tf.float32)
 
 
-		self.loss = (tf.reduce_sum(ctx_expr) + tf.reduce_sum(neg_expr))
+		avg_ents = tf.div(tf.reduce_sum(embed_other_entities, 1), src_constnt)
+		ents_diff = tf.square(tf.sub(embed_entities, avg_ents))
+		reg_expr =  self._args.regularizer * tf.reduce_sum(ents_diff) / tf.cast(ents_constant, tf.float32)
+
+
+		self.loss = tf.reduce_sum(ctx_expr) + tf.reduce_sum(neg_expr) - reg_expr
 
 	def optimize(self):
 		optimizer = tf.train.GradientDescentOptimizer(self._lr)
@@ -172,14 +178,52 @@ class MyWord2Vec:
 		lr = np.maximum(0.0001, self._lr / decay_factor)
 		self._lr = round(lr,4)
 
+	def _ents_matrices(self):
+
+		self._logger.info('Preparing named entites for this source')
+
+		# get political entities
+		source_entities = np.array(self._srcs_ents[self._current_source])
+
+
+		corresponding_ents = list()
+		padding_index = self._dictionary['UNK']
+		# get corresponding entities and replace tokens by ids
+		for ent in source_entities:
+
+			base_ent = ent.split('_',-1)[0]
+			temp = np.array(self._ents_srcs[base_ent])
+			'''
+			TODO:
+			Remve entity from its correspondings list
+			'''
+			for curr_ent in temp:
+				temp[temp==curr_ent] = self._dictionary[curr_ent]
+
+			temp = temp.astype(int).tolist()
+			temp += [padding_index] * (self._number_of_srcs - len(temp))
+			corresponding_ents.append(temp)
+
+
+		# replace entities' tokens by ids
+		source_ents_ids = source_entities
+		for ent in source_ents_ids:
+			source_ents_ids[source_ents_ids==ent] = self._dictionary[ent]
+
+		source_ents_ids = source_ents_ids.astype(int)
+
+		self._current_entities = source_ents_ids
+		self._corresponding_ents = corresponding_ents
+
+
 	def generate_batch(self):
 
 		context_words = []
 		sampled_words = []
 
 		# get current batch, curr_index: curr_index + batch_size
-		current_data_batch = self._data[ self.data_index : self.data_index + self._args.batch_size ]
-		self.data_index += (self._args.batch_size % self.data_size)
+		current_data_batch = self._data[ self._data_index : self._data_index + self._args.batch_size ]
+		self._data_index += (self._args.batch_size % self._data_size)
 
 		# add extra UNKs for padding context windows
 		padding_index = self._dictionary['UNK']
@@ -194,86 +238,84 @@ class MyWord2Vec:
 			context_words += zip([word] * len(context), context)
 			sampled_words += zip([word] * len(samples), samples)
 
+		inp_ctx, out_ctx = zip(*context_words)
+		inp_neg, out_neg = zip(*sampled_words)
 
-		return context_words, sampled_words
+		feed_dict = {	self.out_ents: self._current_entities,
+						self.other_ents: self._corresponding_ents,
+						self.inp_ctx: inp_ctx,
+						self.out_ctx: out_ctx,
+						self.inp_neg: inp_neg,
+						self.out_neg: out_neg,	}
 
+		return feed_dict
+
+
+	def _prepare_file(self, file_path):
+		self._data = self._reader.read_file(file_path, self._dictionary)
+		self._data_size = len(self._data)
 
 	def train(self):
-
-		if self._args.model:
-			self._load_model()
-
-		self._logger.info('Reading data ...')
-
 
 		if os.path.exists(self._args.output):
 			embeddings = self._load_model(self._args.output)
 			self._plot('final',embeddings)
 			return
 
-		self._data = []
-		for file_path in self._arts_srcs:
-			self._data += self._reader.read_file(file_path, self._dictionary)
-
-
-
-		self.data_size = len(self._data)
-		single_batch = self._set_batch_size()
-		batch_iter = self.data_size // single_batch
-		check_point = batch_iter / 4
-
 		self._build_graph()
-
 		self._logger.info('Starting training ...')
-		with tf.Session(graph=self.graph) as sess:
-			tf.initialize_all_variables().run()
 
+		with tf.Session(graph=self.graph) as sess:
+
+			tf.initialize_all_variables().run()
 			first_start = time.time()
 
-			prev_emb = self.out_embeddings
-			avg = 0
 			for epoch in xrange(1, self._args.epochs+1):
-				start = time.time()
 
+				start = time.time()
 				self._logger.info(	'[*] training, epoch num: %d, out of %d with learning rate: %f' \
 									% (epoch, self._args.epochs, self._lr))
 
-				for batch in xrange(batch_iter):
+				total_batches = 0
+				batches_so_far = 0
 
-					context_words, sampled_words = self.generate_batch()
+				avg = 0
+
+				for file_path in self._arts_srcs:
+
+					self._current_source = self._arts_srcs[file_path]
+					self._ents_matrices()
 
 
-					inp_ctx, out_ctx = zip(*context_words)
-					inp_neg, out_neg = zip(*sampled_words)
+					self._logger.info('Reading file %s' % file_path)
+					self._prepare_file(file_path)
 
-					feed_dict = {	self.inp_ctx: inp_ctx,
-									self.out_ctx: out_ctx,
-									self.inp_neg: inp_neg,
-									self.out_neg: out_neg,	}
+					file_batches = self._data_size / self._args.batch_size
+					check_point = file_batches / 4
+					total_batches += file_batches
 
-					try:
+					for batch in xrange(file_batches):
+						batches_so_far += 1
+						feed_dict = self.generate_batch()
 						cost, _ = sess.run([self.loss, self.train], feed_dict=feed_dict)
-					except:
-						self._logger.info('[*] encountered an error, ignoring')
-						pass
 
 
-					if math.isnan(cost) or math.isinf(cost):
-						self._logger.info('[*] Encountered NaN or Inf, stopping training')
-						final_embeddings = prev_emb.eval()
-						break
+						# if math.isnan(cost) or math.isinf(cost):
+						# 	self._logger.info('[*] Encountered NaN or Inf, stopping training')
+						# 	final_embeddings = prev_emb.eval()
+						# 	break
 
-					avg += cost
+						avg += cost
 
-					if batch % check_point == 0 and batch != 0:
+						# if batch % check_point == 0 and batch != 0:
 						self._logger.info(	'\t[*][*] batch %s out of %s, avg cost=%s, time so far: %ds' \
-											% (batch, batch_iter, avg/batch,int(time.time()-start)))
+											% (batch, file_batches, avg/batches_so_far,int(time.time()-start)))
 
-					prev_emb = self.out_embeddings
+					self._data_index = 0
+					self._logger.info(	'[*] Done file %s, avg cost=%s, time taken: %ds ' \
+										% ( file_path,avg/file_batches, int(time.time()-start)))
 
-
-				avg /= batch_iter
-
+				avg /= total_batches
 				self._logger.info(	'[*] Done epoch %s out of %s, avg cost=%s, time taken: %ds ' \
 									% ( epoch,self._args.epochs,avg, int(time.time()-start)))
 

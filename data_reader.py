@@ -46,13 +46,20 @@ class DataReader:
 		# source ~> all entities occurring in this source
 		with open('%s/meta/src_ents.csv' % data_dir) as f:
 			src_ents = np.array([line.strip().decode('utf-8').split(',') for line in f])
-		srcs_ents = dict(zip(src_ents[:,0],src_ents[:,1:]))
 
+		src_ents_dict = dict()
+		for entry in src_ents:
+			src_ents_dict[entry[0]] = entry[1:]
+
+		srcs_ents = src_ents_dict
 
 		# entity ~> all sources where this entity occur
 		with open('%s/meta/ents_sources.csv' % data_dir) as f:
 			ents_srcs_pairs = np.array([line.strip().decode('utf-8').split(',') for line in f])
-		ents_srcs = dict(zip(ents_srcs_pairs[:,0],ents_srcs_pairs[:,1:]))
+
+		ents_srcs = dict()
+		for entry in ents_srcs_pairs:
+			ents_srcs[entry[0]] = entry[1:]
 
 		self._logger.info('Number of entities: %d' % len(ents_srcs))
 
@@ -62,9 +69,9 @@ class DataReader:
 		self._logger.info('Number of source-specific entities: %d' % total_ents)
 
 		# entity ~> names of all corresponding source-specific entities
-		with open('%s/meta/ents_pairs.csv' % data_dir) as f:
-			ents_pairs = np.array([line.strip().decode('utf-8').split(',') for line in f])
-		ents_srcents = dict(zip(ents_pairs[:,0],ents_pairs[:,1:]))
+		# with open('%s/meta/ents_pairs.csv' % data_dir) as f:
+		# 	ents_pairs = np.array([line.strip().decode('utf-8').split(',') for line in f])
+		# ents_srcents = dict(zip(ents_pairs[:,0],ents_pairs[:,1:]))
 
 		return (vocab,
 				vocab_size,
@@ -73,8 +80,8 @@ class DataReader:
 				unigrams,
 				arts_srcs,
 				srcs_ents,
-				ents_srcs,
-				ents_srcents)
+				ents_srcs,)
+				# ents_srcents)
 
 
 	def read_file(self, file, dictionary):
