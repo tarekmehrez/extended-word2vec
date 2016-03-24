@@ -47,3 +47,9 @@ worrying,13560
 UK_3,18799
 history,56657
 UNK,1
+FIFA,90353
+Iran,100791
+Switzerland,128300
+Syria,43979
+UK,56067
+USA,112081

@@ -47,7 +47,8 @@ class MyWord2Vec:
 		self._unigrams,
 		self._arts_srcs,
 		self._srcs_ents,
-		self._ents_srcs) = self._reader.read_meta_files(self._args.data)
+		self._ents_srcs,
+		self._ents_dict) = self._reader.read_meta_files(self._args.data)
 
 		self._number_of_srcs = len(set(self._srcs_ents.keys()))
 
@@ -251,8 +252,22 @@ class MyWord2Vec:
 
 
 	def _prepare_file(self, file_path):
-		self._data = self._reader.read_file(file_path, self._dictionary)
-		self._data_size = len(self._data)
+		data = np.array(self._reader.read_file(file_path, self._dictionary))
+
+		data = data.astype(int).tolist()
+
+		self._data_size = len(data)
+
+		self._data  = []
+
+		i = 10
+		for token in data:
+
+			self._data.append(token)
+			key = self._reverse_dictionary[token]
+			if  key in self._ents_dict:
+				base_ent = self._ents_dict[key]
+				self._data.append(self._dictionary[base_ent])
 
 	def train(self):
 
