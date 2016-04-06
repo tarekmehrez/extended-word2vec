@@ -14,10 +14,11 @@ class DataReader:
 		# vocab ~> frequencies
 		# build id dictionaries, and unigrams (for negative sampling)
 		with open('%s/meta/vocab.txt' % data_dir) as f:
-			vocab_freqs = np.array([line.strip().decode('utf-8').split(',') for line in f])
-
+			vocab_freqs = np.array([line.strip().split(',') for line in f], dtype=np.str)
 
 		count = dict(zip(vocab_freqs[:,0], vocab_freqs[:,1]))
+
+
 
 		vocab = count.keys()
 		vocab_size = len(vocab)
@@ -37,7 +38,7 @@ class DataReader:
 
 		# source ~> list of all articles paths of this source
 		with open('%s/meta/article_src.csv' % data_dir) as f:
-			arts_srcs_pairs = np.array([line.strip().decode('utf-8').split(',') for line in f])
+			arts_srcs_pairs = np.array([line.strip().split(',') for line in f], dtype=np.str)
 		arts_srcs = dict(zip(arts_srcs_pairs[:,0],arts_srcs_pairs[:,1]))
 
 		self._logger.info('Number of sources: %d' % len((set(arts_srcs.values()))))
@@ -45,7 +46,7 @@ class DataReader:
 
 		# source ~> all entities occurring in this source
 		with open('%s/meta/src_ents.csv' % data_dir) as f:
-			src_ents = np.array([line.strip().decode('utf-8').split(',') for line in f])
+			src_ents = np.array([line.strip().split(',') for line in f])
 
 		src_ents_dict = dict()
 		for entry in src_ents:
@@ -54,8 +55,8 @@ class DataReader:
 		srcs_ents = src_ents_dict
 
 		# entity ~> all sources where this entity occur
-		with open('%s/meta/ents_sources.csv' % data_dir) as f:
-			ents_srcs_pairs = np.array([line.strip().decode('utf-8').split(',') for line in f])
+		with open('meta/ents_srcs.csv') as f:
+			ents_srcs_pairs = np.array([line.strip().split(',') for line in f])
 
 		ents_srcs = dict()
 		for entry in ents_srcs_pairs:
@@ -68,10 +69,6 @@ class DataReader:
 
 		self._logger.info('Number of source-specific entities: %d' % total_ents)
 
-		# entity ~> names of all corresponding source-specific entities
-		with open('%s/meta/ents_pairs.csv' % data_dir) as f:
-			ents_pairs = np.array([line.strip().decode('utf-8').split(',') for line in f])
-		ents_dict = dict(zip(ents_pairs[:,0],ents_pairs[:,1]))
 
 		return (vocab,
 				vocab_size,
@@ -80,8 +77,7 @@ class DataReader:
 				unigrams,
 				arts_srcs,
 				srcs_ents,
-				ents_srcs,
-				ents_dict)
+				ents_srcs)
 
 
 	def read_file(self, file, dictionary):
@@ -97,14 +93,7 @@ class DataReader:
 
 	def _preprocess(self, file):
 
-		'''
-		TODO:
-		# Tokenization
-		# Stop word removal
-		# Removing words occurring less than X times
-		# Grouping entities referring to the same entity
-		# Coreference resolution
-		'''
+
 		with open(file, 'rb') as f:
 			return f.read().strip().split(' ')
 
