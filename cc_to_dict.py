@@ -1,3 +1,9 @@
+
+'''
+1- Takes in countryinfo data
+2- extracts all possible mentions of country
+3- maps them to the country code
+'''
 import argparse
 import sys
 import re

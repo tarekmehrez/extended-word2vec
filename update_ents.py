@@ -1,3 +1,7 @@
+'''
+Does basic entity resolution by replacing mentions of locations  by their country code, taken from CountryInfo data
+'''
+
 import cPickle
 import os
 import sys

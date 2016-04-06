@@ -1,3 +1,15 @@
+'''
+Takes in embeddings and vocab dictionary:
+1- Identifies named entities from vocab
+2- Extracts their ids and embeddings
+3- Calculate deltas for each entity
+4- Match deltas to features in testing data
+5- Apply sparse Coding
+6- Train on Logistic Regression with SGD (scikit)
+
+'''
+
+
 import argparse
 import os
 import sys
