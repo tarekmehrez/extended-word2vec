@@ -24,7 +24,7 @@ Stages: Data Collection, Data Processing, Training Embeddings and finally Sparse
 
 - Run `create_meta.py` to create meta files (vocab, entities, .. etc.) used by the model
 - Run `main.py` to train word embeddings, you need to specify path to output files
-- You can use `vis.py to visualize embeddings whether by PCA or t-SNE
+- You can use `vis.py` to visualize embeddings whether by PCA or t-SNE
 
 ## Sparse Representation & testing
 
